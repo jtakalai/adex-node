@@ -24,18 +24,47 @@ function registerEndpont(which) {
 	console.log('[' + pid + '] ' + 'Register endpoint ' + which + ' /' + endpoints[which]);
 	app.get('/' + endpoints[which], function(request, response) {
 		var bid = JSON.parse(request.query.bid);
-		redisClient.scard([bid + ':' + endpoints[which]], (err, result) => {
-			if (err)
-				throw err;
-			response.json(result);
-		});
+		console.log('Received endpoint request, data ' + endpoints[which] +
+		 ' start at ' + request.query.start + ' end at ' + request.query.end);
+		if (request.query.start === undefined && request.query.end === undefined) {
+			redisClient.scard([bid + ':' + endpoints[which]], (err, result) => {
+				if (err)
+					throw err;
+				response.json(result);
+			});
+		} else {
+			redisClient.smembers([bid + ':' + endpoints[which]], (err, result) => {
+				if (err)
+					throw err;
+
+				var sresults = 0;
+				if (request.query.start === undefined)
+					request.query.start = 0;
+				if (request.query.end === undefined)
+					request.query.end = Date.now();
+
+				for (var which in result) {
+					var entry = JSON.parse(result[which]);
+					var when = Date.parse(entry.time);
+					if (Math.floor(when/1000) >= request.query.start &&
+					  Math.floor(when/1000) <= request.query.end) {
+						sresults += 1;
+					}
+				}
+				response.json(sresults);
+			});
+		}
 	});
 }
 
 function submitEntry(payload, response) {
-    redisClient.sadd([payload.bid + ':' + payload.type, 'uid' + ' ' +
-	  payload.uid + ' ' +  'time' + ' ' +  payload.time  + ' ' + 
-	  'adunit' + ' ' + payload.adunit], (err, result) => {
+	var jsonPayload = {
+		uid: payload.uid,
+		time: payload.time,
+		adunit: payload.adunit
+	}
+	redisClient.sadd([payload.bid + ':' + payload.type, JSON.stringify(jsonPayload)],
+	 (err, result) => {
 		if (err || result != 1) {
 			console.log('Add entry failed (' + result + ') ' + err);
 			console.log('Failed ' + JSON.stringify(payload));
