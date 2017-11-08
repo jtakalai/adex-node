@@ -27,8 +27,8 @@ function registerEndpont(which) {
 	app.get('/' + endpoints[which], function(request, response) {
 		var whenStart = Date.now();
 		var bid = JSON.parse(request.query.bid);
-		console.log('Received endpoint request, data ' + endpoints[which] +
-		 ' start at ' + request.query.start + ' end at ' + request.query.end);
+		// console.log('Received endpoint request, data ' + endpoints[which] +
+		// ' start at ' + request.query.start + ' end at ' + request.query.end);
 		if (request.query.start === undefined && request.query.end === undefined) {
 			redisClient.zcard([bid + ':' + endpoints[which]], (err, result) => {
 				if (err)
