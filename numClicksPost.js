@@ -42,6 +42,11 @@ function submitRequest(which) {
 			responses += 1;
 			processed ++;
 			// console.log('Received response ' + responses);
+			if (processed >= count) {
+				var whenEnd = Date.now();
+				console.log('Sending count ' + count +' entries (' + responses +')  took ' + (whenEnd - whenStart) + ' milliseconds');
+				process.exit(0);
+			}
 		});
 		request.on('error', function(err) {
 			console.log('Error submitting data ' + JSON.stringify(data[which]));
@@ -68,11 +73,3 @@ for (var i = 0; i < iterations; i++) {
 	setTimeout(submitRequests, i * 100, i);
 }
 
-// Only exit when all requests have been responded to
-setInterval(() => {
-	if (processed >= count) {
-		var whenEnd = Date.now();
-		console.log('Sending count ' + count +' entries (' + responses +')  took ' + (whenEnd - whenStart) + ' milliseconds');
-		process.exit(0);
-	}
-}, 100);
