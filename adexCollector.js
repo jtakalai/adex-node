@@ -5,6 +5,7 @@ const http = require('http');
 const express = require('express');
 const redis = require('redis');
 const bodyParser = require('body-parser');
+const scripto = require('redis-scripto');
 
 const pid = process.pid;
 
@@ -15,6 +16,7 @@ app.set('view engine', 'pug');
 app.use(bodyParser.urlencoded({ extended: false }));
 
 var redisClient = null;
+var scriptManager = null;
 
 var endpoints = ['impression', 'click', 'leave'];
 for (var i in endpoints)
@@ -23,35 +25,36 @@ for (var i in endpoints)
 function registerEndpont(which) {
 	console.log('[' + pid + '] ' + 'Register endpoint ' + which + ' /' + endpoints[which]);
 	app.get('/' + endpoints[which], function(request, response) {
+		var whenStart = Date.now();
 		var bid = JSON.parse(request.query.bid);
 		console.log('Received endpoint request, data ' + endpoints[which] +
 		 ' start at ' + request.query.start + ' end at ' + request.query.end);
 		if (request.query.start === undefined && request.query.end === undefined) {
-			redisClient.scard([bid + ':' + endpoints[which]], (err, result) => {
+			redisClient.zcard([bid + ':' + endpoints[which]], (err, result) => {
 				if (err)
 					throw err;
+				var whenEnd = Date.now();
 				response.json(result);
+				// console.log('Zcard request took ' + (whenEnd - whenStart) + ' milliseconds');
 			});
 		} else {
-			redisClient.smembers([bid + ':' + endpoints[which]], (err, result) => {
-				if (err)
-					throw err;
-
-				var sresults = 0;
+			var whenStart = Date.now();
 				if (request.query.start === undefined)
 					request.query.start = 0;
 				if (request.query.end === undefined)
 					request.query.end = Date.now();
-
-				for (var which in result) {
-					var entry = JSON.parse(result[which]);
-					var when = Date.parse(entry.time);
-					if (Math.floor(when/1000) >= request.query.start &&
-					  Math.floor(when/1000) <= request.query.end) {
-						sresults += 1;
-					}
+			var keys = [ request.query.start, request.query.end ];
+			var values = [ bid + ':' + endpoints[which] ];
+			// console.log('scriptManager.run to run keys ' + keys + ' values ' + values);
+			scriptManager.run('timefilter', keys, values, function(err, result) {
+				if (err) {
+					console.log('scriptManager.run returned error');
+					result = 0;
 				}
-				response.json(sresults);
+
+				var whenEnd = Date.now();
+				console.log('scriptManager.run request took ' + (whenEnd - whenStart) + ' milliseconds; ' + result);
+				response.json(result);
 			});
 		}
 	});
@@ -60,14 +63,13 @@ function registerEndpont(which) {
 function submitEntry(payload, response) {
 	var jsonPayload = {
 		uid: payload.uid,
-		time: payload.time,
+		time: Date.parse(payload.time),
 		adunit: payload.adunit
 	}
-	redisClient.sadd([payload.bid + ':' + payload.type, JSON.stringify(jsonPayload)],
-	 (err, result) => {
-		if (err || result != 1) {
+	redisClient.zadd([payload.bid + ':' + payload.type, Date.parse(payload.time),
+	    'uid:' + payload.uid + ' adunit:' + payload.adunit], (err, result) => {
+		if (err || result < 1) {
 			console.log('Add entry failed (' + result + ') ' + err);
-			console.log('Failed ' + JSON.stringify(payload));
 		}
 	  response.redirect('/');
   });
@@ -77,7 +79,7 @@ app.post('/submit', function(request, response) {
 	var signature = request.query.signature;
 	// XXX: TODO - verify signature is valid
     var payload = JSON.parse(request.query.data);
-    console.log('Received request from ' + signature + ', data ' + JSON.stringify(payload));
+    // console.log('Received request from ' + signature + ', data ' + JSON.stringify(payload));
 	submitEntry(payload, response);
 });
 
@@ -86,6 +88,8 @@ app.get('/', function(request, response) {
 });
 
 redisInit();
+redisLoadScript();
+
 http.createServer(app).listen(app.get('port'), function(){
 	console.log("Express server listening on port " + app.get('port'));
 });
@@ -98,4 +102,10 @@ function redisInit() {
 	redisClient.on('error',function() {
 		process.exit(1);
 	});
+}
+
+function redisLoadScript()
+{
+	scriptManager = new scripto(redisClient);
+	scriptManager.loadFromFile('timefilter', './zcount.lua');
 }
