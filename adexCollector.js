@@ -61,11 +61,6 @@ function registerEndpont(which) {
 }
 
 function submitEntry(payload, response) {
-	var jsonPayload = {
-		uid: payload.uid,
-		time: Date.parse(payload.time),
-		adunit: payload.adunit
-	}
 	redisClient.zadd([payload.bid + ':' + payload.type, Date.parse(payload.time),
 	    'uid:' + payload.uid + ' adunit:' + payload.adunit], (err, result) => {
 		if (err || result < 1) {
