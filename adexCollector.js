@@ -79,10 +79,6 @@ app.post('/submit', function(request, response) {
 	submitEntry(payload, response);
 });
 
-app.get('/', function(request, response) {
-    response.send('Nothing here');
-});
-
 redisInit();
 redisLoadScript();
 
