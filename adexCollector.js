@@ -19,8 +19,9 @@ var redisClient = null;
 var scriptManager = null;
 
 var endpoints = ['impression', 'click', 'leave'];
-for (var i in endpoints)
-	registerEndpoint(i);
+endpoints.forEach(function(element, index) {
+	registerEndpoint(index);
+});
 
 function registerEndpoint(which) {
 	console.log('[' + pid + '] ' + 'Register endpoint ' + which + ' /' + endpoints[which]);
