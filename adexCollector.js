@@ -20,9 +20,9 @@ var scriptManager = null;
 
 var endpoints = ['impression', 'click', 'leave'];
 for (var i in endpoints)
-	registerEndpont(i);
+	registerEndpoint(i);
 
-function registerEndpont(which) {
+function registerEndpoint(which) {
 	console.log('[' + pid + '] ' + 'Register endpoint ' + which + ' /' + endpoints[which]);
 	app.get('/' + endpoints[which], function(request, response) {
 		var whenStart = Date.now();
