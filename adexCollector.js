@@ -9,19 +9,41 @@ const scripto = require('redis-scripto');
 
 const pid = process.pid;
 
+var redisClient = null;
+var scriptManager = null;
+var endpoints = ['impression', 'click', 'leave'];
+
 var app = new express();
 app.set('port', process.env.PORT || 8080);
 app.set('view engine', 'pug');
-
 app.use(bodyParser.urlencoded({ extended: false }));
 
-var redisClient = null;
-var scriptManager = null;
+redisInit();
+redisLoadScript();
 
-var endpoints = ['impression', 'click', 'leave'];
+http.createServer(app).listen(app.get('port'), function(){
+	console.log("Express server listening on port " + app.get('port'));
+});
+
 endpoints.forEach(function(element, index) {
 	registerEndpoint(index);
 });
+
+function redisInit() {
+	redisClient = redis.createClient();
+	redisClient.on('ready',function() {
+		console.log('Redis is ready');
+	});
+	redisClient.on('error',function() {
+		process.exit(1);
+	});
+}
+
+function redisLoadScript()
+{
+	scriptManager = new scripto(redisClient);
+	scriptManager.loadFromFile('timefilter', './zcount.lua');
+}
 
 function registerEndpoint(which) {
 	console.log('[' + pid + '] ' + 'Register endpoint ' + which + ' /' + endpoints[which]);
@@ -78,26 +100,3 @@ app.post('/submit', function(request, response) {
     // console.log('Received request from ' + signature + ', data ' + JSON.stringify(payload));
 	submitEntry(payload, response);
 });
-
-redisInit();
-redisLoadScript();
-
-http.createServer(app).listen(app.get('port'), function(){
-	console.log("Express server listening on port " + app.get('port'));
-});
-
-function redisInit() {
-	redisClient = redis.createClient();
-	redisClient.on('ready',function() {
-		console.log('Redis is ready');
-	});
-	redisClient.on('error',function() {
-		process.exit(1);
-	});
-}
-
-function redisLoadScript()
-{
-	scriptManager = new scripto(redisClient);
-	scriptManager.loadFromFile('timefilter', './zcount.lua');
-}
