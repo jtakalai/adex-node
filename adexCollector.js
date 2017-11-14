@@ -4,8 +4,11 @@
 const http = require('http');
 const express = require('express');
 const redis = require('redis');
+const headerParser = require('header-parser');
 const bodyParser = require('body-parser');
 const scripto = require('redis-scripto');
+const nacl = require('tweetnacl');
+nacl.util = require('tweetnacl-util');
 
 const pid = process.pid;
 
@@ -16,6 +19,7 @@ var endpoints = ['impression', 'click', 'leave'];
 var app = new express();
 app.set('port', process.env.PORT || 8080);
 app.set('view engine', 'pug');
+app.use(headerParser);
 app.use(bodyParser.urlencoded({ extended: false }));
 
 redisInit();
@@ -94,9 +98,19 @@ function submitEntry(payload, response) {
 }
 
 app.post('/submit', function(request, response) {
-	var signature = request.query.signature;
-	// XXX: TODO - verify signature is valid
-    var payload = JSON.parse(request.query.data);
-    // console.log('Received request from ' + signature + ', data ' + JSON.stringify(payload));
-	submitEntry(payload, response);
+	var whenStart = Date.now();
+	var publicKey = request.get('X-public-key');
+	var signature = nacl.util.decodeBase64(request.query.signature);
+	var payload = JSON.parse(request.query.data);
+
+	//console.log('Public key len is ' + publicKey + ', signature is ' + request.query.signature + ' data is ' + request.query.data);
+
+	if (nacl.sign.detached.verify(nacl.util.decodeUTF8(request.query.data),
+		signature, nacl.util.decodeBase64(publicKey))) {
+		var whenEnd = Date.now();
+		// console.log('submit signature verification took ' + (whenEnd - whenStart) + ' milliseconds;');
+		submitEntry(payload, response);
+	} else {
+		console.log('Received invalid signature');
+	}
 });

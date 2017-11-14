@@ -4,24 +4,28 @@
 var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var http = require('http');
+var nacl = require('tweetnacl');
+nacl.util = require('tweetnacl-util');
 
 var fileName = argv._[0];
 if (fileName === undefined) {
 	console.log('usage: ./numClicksPost <sample-data-file>' +
 		' --signature=<valid-signature>' +
 		' --server=<server-name>' +
-		' --port=<server-port>');
+		' --port=<server-port>' +
+		' --privateKey=<keyfile>');
 	process.exit(1);
 }
 
-var data = JSON.parse(fs.readFileSync(fileName, 'utf8'));
-
-var signature = 'ababababababa';
+var privateKeyFile = './private.key';
 var servername = 'localhost';
 var serverport = 8080;
-if (argv.signature) signature = argv.signature;
 if (argv.server) servername = argv.server;
 if (argv.port) serverport = argv.port;
+if (argv.privateKey) privateKeyFile = argv.privateKey;
+
+var data = JSON.parse(fs.readFileSync(fileName, 'utf8'));
+var privateKey = fs.readFileSync(privateKeyFile, 'utf8');
 
 console.log("Start");
 var whenStart = Date.now();
@@ -31,16 +35,23 @@ var timer = null;
 console.log('count is ' + count);
 
 function submitRequest(which) {
+	var keyPair = nacl.sign.keyPair.fromSecretKey(nacl.util.decodeBase64(privateKey));
+	var message = JSON.stringify(data[which]);
+	var signature = nacl.sign.detached(nacl.util.decodeUTF8(message), keyPair.secretKey);
+
 	var options = {
 	    host: servername,
 	    port: serverport,
-		path: '/submit?signature=' + signature + '&data=' + JSON.stringify(data[which]),
+		path: '/submit?signature=' + encodeURIComponent(nacl.util.encodeBase64(signature)) + '&data=' + JSON.stringify(data[which]),
 		method: 'POST',
+		headers: {
+			'X-public-key': nacl.util.encodeBase64(keyPair.publicKey),
+		}
 	};
 	var request = http.request(options, function(result) {	
 		result.on('data', function() {
 			responses += 1;
-			processed ++;
+			processed++;
 			// console.log('Received response ' + responses);
 			if (processed >= count) {
 				var whenEnd = Date.now();
@@ -50,14 +61,15 @@ function submitRequest(which) {
 		});
 		request.on('error', function(err) {
 			console.log('Error submitting data ' + JSON.stringify(data[which]));
-			processed ++;
+			processed++;
 		});
 	});
 	// console.log('Submited data (' + which + ') ' + JSON.stringify(data[which]));
 	request.end();
 }
 
-var REQUESTS_AT_ONCE = 200;
+var REQUESTS_AT_ONCE = 10;
+var REQUEST_HOLD_TIME = 50;
 var iterations = Math.ceil(count / REQUESTS_AT_ONCE);
 
 function submitRequests(loop) {
@@ -70,6 +82,5 @@ function submitRequests(loop) {
 }
 
 for (var i = 0; i < iterations; i++) {
-	setTimeout(submitRequests, i * 100, i);
+	setTimeout(submitRequests, i * REQUEST_HOLD_TIME, i);
 }
-
