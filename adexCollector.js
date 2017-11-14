@@ -9,6 +9,7 @@ const bodyParser = require('body-parser');
 const scripto = require('redis-scripto');
 const nacl = require('tweetnacl');
 nacl.util = require('tweetnacl-util');
+const ed25519 = require('ed25519');
 
 const pid = process.pid;
 
@@ -105,12 +106,12 @@ app.post('/submit', function(request, response) {
 
 	//console.log('Public key len is ' + publicKey + ', signature is ' + request.query.signature + ' data is ' + request.query.data);
 
-	if (nacl.sign.detached.verify(nacl.util.decodeUTF8(request.query.data),
-		signature, nacl.util.decodeBase64(publicKey))) {
+	if (ed25519.Verify(new Buffer(request.query.data), signature, nacl.util.decodeBase64(publicKey))) {
 		var whenEnd = Date.now();
 		// console.log('submit signature verification took ' + (whenEnd - whenStart) + ' milliseconds;');
 		submitEntry(payload, response);
 	} else {
 		console.log('Received invalid signature');
+		response.sendStatus(400);
 	}
 });
