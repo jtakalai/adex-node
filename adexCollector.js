@@ -39,7 +39,8 @@ function redisInit() {
 	redisClient.on('ready',function() {
 		console.log('Redis is ready');
 	});
-	redisClient.on('error',function() {
+	redisClient.on('error',function(err) {
+		if (err) console.error(err);
 		process.exit(1);
 	});
 }
