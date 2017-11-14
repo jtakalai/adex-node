@@ -17,4 +17,6 @@ http.createServer(app).listen(app.get('port'), function(){
 	console.log("Express server listening on port " + app.get('port'));
 });
 
-app.use('/', require('./routes/adex-collector/collector'))
+// Not used in adexview this branch
+// app.use('/', require('./routes/adex-collector/collector'))
+app.use('/', require('./routes/adex-view/adex-view'))

@@ -4,7 +4,7 @@
   "description": "Adex node",
   "main": "adexCollector.js",
   "scripts": {
-    "start": "node adexCollector.js",
+    "start": "node app.js",
     "cluster": "node cluster.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
