@@ -41,13 +41,21 @@ function registerEndpoint() {
         var bid = JSON.parse(request.query.bid);
         // console.log('Received endpoint request, data ' + endpoints[which] +
         // ' start at ' + request.query.start + ' end at ' + request.query.end);
-        if (request.query.start === undefined && request.query.end === undefined) {
+        if (request.query.start === undefined && request.query.end === undefined && request.query.interval == undefined) {
             redisClient.zcard(['bid:' + bid], (err, result) => {
                 if (err)
                     throw err;
                 var whenEnd = Date.now();
                 response.json(result);
                 // console.log('Zcard request took ' + (whenEnd - whenStart) + ' milliseconds');
+            });
+        } else if (request.query.interval !== undefined) {
+            redisClient.hget(['timeinterval:' + bid, request.query.interval], (err, result) => {
+                if (err)
+                    throw err;
+                var whenEnd = Date.now();
+                response.json(parseInt(result, 10));
+                // console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
             });
         } else {
             var whenStart = Date.now();
