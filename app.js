@@ -18,5 +18,5 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 
 // Not used in adexview this branch
-// app.use('/', require('./routes/adex-collector/collector'))
+app.use('/', require('./routes/adex-collector/collector'))
 app.use('/', require('./routes/adex-view/adex-view'))
