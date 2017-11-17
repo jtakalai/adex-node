@@ -37,5 +37,5 @@ if (cluster.isMaster) {
     restartWorker(0);
   });
 } else {
-  require('./adexCollector');
+  require('./app');
 }
