@@ -10,7 +10,6 @@ nacl.util = require('tweetnacl-util');
 var fileName = argv._[0];
 if (fileName === undefined) {
 	console.log('usage: ./numClicksPost <sample-data-file>' +
-		' --signature=<valid-signature>' +
 		' --server=<server-name>' +
 		' --port=<server-port>' +
 		' --privateKey=<keyfile>');
