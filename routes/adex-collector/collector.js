@@ -14,8 +14,8 @@ var redisClient = null;
 var scriptManager = null;
 var EXPIRY_INTERVAL = 2678400;
 var MSECS_IN_SEC = 1000;
-var dbPort = process.env.DBPORT || 6379
-var dbHost = process.env.DBHOST || '127.0.0.1'
+var dbPort = process.env.DBPORT || 6379;
+var dbHost = process.env.DBHOST || '127.0.0.1';
 
 redisInit();
 redisLoadScript();
@@ -54,12 +54,18 @@ function registerEndpoint() {
                 // console.log('Zcard request took ' + (whenEnd - whenStart) + ' milliseconds');
             });
         } else if (request.query.interval !== undefined) {
-            redisClient.hget(['timeinterval:' + bid, request.query.interval], (err, result) => {
-                if (err)
-                    throw err;
+            redisClient.multi([['hget', 'time:' + bid +':click', request.query.interval],
+                ['hget', 'time:' + bid + ':impression', request.query.interval],
+                ['hget', 'time:' + bid + ':leave', request.query.interval]
+            ]).exec(function (err, replies) {
                 var whenEnd = Date.now();
-                response.json(parseInt(result, 10));
-                // console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
+                var results = {
+                    'click': parseInt(replies[0], 10),
+                    'impression': parseInt(replies[1], 10),
+                    'leave': parseInt(replies[2], 10),
+                };
+                response.json(results);
+                console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
             });
         } else {
             var whenStart = Date.now();
@@ -93,7 +99,7 @@ function submitEntry(payload, response) {
         response.redirect('/');
     });
     var timeInterval = Math.floor(Date.parse(payload.time) / (60 * MSECS_IN_SEC));
-    redisClient.hincrby(['timeinterval:' + payload.bid, timeInterval, 1], (err, result) => {
+    redisClient.hincrby(['time:' + payload.bid + ':' + payload.type, timeInterval, 1], (err, result) => {
         if (err) {
             console.log('[HINCRBY] Add entry failed (' + timeInterval + ') ' + err);
         } else {
@@ -102,7 +108,7 @@ function submitEntry(payload, response) {
                 var expiryTime = (timeInterval + 1 ) * 60 * MSECS_IN_SEC +
                     EXPIRY_INTERVAL * MSECS_IN_SEC - date.getTime();
                 var expirySeconds = Math.floor(expiryTime / 1000);
-                redisClient.expire(['timeinterval:' + payload.bid, expirySeconds], (err, res) => {
+                redisClient.expire(['time:' + payload.bid + ':' + payload.type, expirySeconds], (err, res) => {
                     if (err)
                         console.log('[EXPIRE] set entry expiry time failed ' + err);
                 });
