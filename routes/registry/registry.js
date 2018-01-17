@@ -9,31 +9,33 @@ const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
 
+let tempDb = []
 
-
-router.post('/registeritem', upload.single('image'), function (request, response) {
-    //TODO: request user and validation
-    let item = JSON.parse(request.body.meta)
-
-    // TODO: check if no image
+router.post('/uploadimage', upload.single('image'), (request, response) => {
     ipfs.addFileToIpfs(request.file.buffer)
         .then((imgIpfs) => {
-            item._meta.img.ipfs = imgIpfs
-            item._meta.createdOn = Date.now()
+            //TODO: send the additional meta (mime etc..) or assume that the client keeps it before send it here
+            response.json({ ipfs: imgIpfs })
         })
-        .then(() => {
-            //TODO: make good id (hash)
-            let itemId = web3.utils.soliditySha3(item._name, item._meta.createdOn, JSON.stringify(item._meta))
-            item._id = itemId
+        .catch((err) => {
+            console.log(err)
+            response.status(500).send(err)
+        })
+})
 
-            return ipfs.addFileToIpfs(JSON.stringify(item))
-        })
+router.post('/registeritem', function (request, response) {
+    //NOTE: request body is text here if use bodyParser.text()
+    //TODO: decide what body data type to use
+    let item = request.body
+
+    ipfs.addFileToIpfs(item)
         .then((itemIpfs) => {
-            console.log('item', item)
+            item = JSON.parse(item)
             item._ipfs = itemIpfs
+            item._id = tempDb.length
+            tempDb.push(item)
 
-            //TODO: add to node db
-
+            //TODO: add to node db (some indexing props for the different types)
             return item
         })
         .then((itm) => {
@@ -41,9 +43,8 @@ router.post('/registeritem', upload.single('image'), function (request, response
         })
         .catch((err) => {
             console.log(err)
-            response.status(500).json(err)
+            response.status(500).send(err)
         })
-
 })
 
-module.exports = router;
+module.exports = router
