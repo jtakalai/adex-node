@@ -16,22 +16,17 @@ class AdUnit extends Base {
     get adUnitModel() { return this._adUnitModel }
     set adUnitModel(value) { this._adUnitModel = value }
 
-    addNewAdUnit(item, ipfs) {
+    addItem(item, ipfs) {
         let AdUnitModel = this.adUnitModel
         let newAdUnit = new AdUnitModel({
-            description: item._description || item._meta.description,
-            itemObj: item,
-            ipfs: ipfs,
+            ...this.getBaseParams(item, ipfs),
             size: item._meta.size
         })
 
         newAdUnit.save()
-
         console.log('newAdUnit', newAdUnit)
-        let respItem = { ...newAdUnit.itemObj }
-        respItem._id = newAdUnit.itemObj
 
-        return respItem
+        return this.getResponseItem(newAdUnit)
     }
 }
 

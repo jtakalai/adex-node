@@ -35,7 +35,7 @@ router.post('/registeritem', function (request, response) {
             item._ipfs = itemIpfs
             item._id = tempDb.length
 
-            return AdUnit.addNewAdUnit(item, itemIpfs)
+            return AdUnit.addItem(item, itemIpfs)
         })
         .then((itm) => {
             // console.log('db item', itm)
