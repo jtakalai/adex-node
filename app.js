@@ -5,6 +5,7 @@ const http = require('http');
 const express = require('express');
 const headerParser = require('header-parser');
 const bodyParser = require('body-parser');
+const mongodb = require('./mongoConnection')
 
 var app = new express();
 app.set('port', process.env.PORT || 7878);
@@ -20,6 +21,11 @@ app.use(function (req, res, next) {
 	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 	next();
 });
+
+// app.use((req, res, next) => {
+// 	mongodb
+// 	next()
+// })
 
 
 http.createServer(app).listen(app.get('port'), function () {
