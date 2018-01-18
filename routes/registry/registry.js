@@ -39,7 +39,7 @@ router.post('/registeritem', function (request, response) {
         })
         .then((itm) => {
             // console.log('db item', itm)
-            response.send(itm.itemObj)
+            response.send(itm)
         })
         .catch((err) => {
             console.log(err)

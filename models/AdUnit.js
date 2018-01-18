@@ -3,16 +3,18 @@
 const mongoose = require('mongoose')
 const AdUnitSchema = require('./../schemas/AdUnit')
 const BaseSchema = require('./../schemas/BaseSchema')
+const Base = require('./Base')
 
-class AdUnit {
+class AdUnit extends Base {
     constructor() {
-        this.baseSchema = BaseSchema
+        super()
         this.adUnitSchema = AdUnitSchema
-
         let Base = mongoose.model('Base', this.baseSchema)
-
-        this.adUnitModel = Base.discriminator('AdUnit', this.adUnitSchema)
+        this.adUnitModel = this.baseModel.discriminator('AdUnit', this.adUnitSchema)
     }
+
+    get adUnitModel() { return this._adUnitModel }
+    set adUnitModel(value) { this._adUnitModel = value }
 
     addNewAdUnit(item, ipfs) {
         let AdUnitModel = this.adUnitModel
@@ -26,7 +28,10 @@ class AdUnit {
         newAdUnit.save()
 
         console.log('newAdUnit', newAdUnit)
-        return newAdUnit
+        let respItem = { ...newAdUnit.itemObj }
+        respItem._id = newAdUnit.itemObj
+
+        return respItem
     }
 }
 
