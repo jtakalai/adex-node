@@ -3,9 +3,10 @@
 const db = require('./../mongoConnection').getDb()
 
 class Items {
-    addItem(item, ipfs) {
+    addItem(item, ipfs, user) {
         return new Promise((resolve, reject) => {
             let dbItem = {
+                user: user,
                 description: item._description || item._meta.description,
                 itemObj: item,
                 ipfs: ipfs,

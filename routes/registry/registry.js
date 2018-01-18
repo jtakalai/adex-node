@@ -12,22 +12,22 @@ const Items = require('./../../models/Items')
 
 let tempDb = []
 
-router.post('/uploadimage', upload.single('image'), (request, response) => {
-    ipfs.addFileToIpfs(request.file.buffer)
+router.post('/uploadimage', upload.single('image'), (req, res) => {
+    ipfs.addFileToIpfs(req.file.buffer)
         .then((imgIpfs) => {
             //TODO: send the additional meta (mime etc..) or assume that the client keeps it before send it here
-            response.json({ ipfs: imgIpfs })
+            res.json({ ipfs: imgIpfs })
         })
         .catch((err) => {
             console.log(err)
-            response.status(500).send(err)
+            res.status(500).send(err)
         })
 })
 
-router.post('/registeritem', function (request, response) {
+router.post('/registeritem', function (req, res) {
     //NOTE: request body is text here if use bodyParser.text()
     //TODO: decide what body data type to use
-    let item = request.body
+    let item = req.body
 
     ipfs.addFileToIpfs(item)
         .then((itemIpfs) => {
@@ -35,15 +35,15 @@ router.post('/registeritem', function (request, response) {
             item._ipfs = itemIpfs
             item._id = tempDb.length
 
-            return Items.addItem(item, itemIpfs)
+            return Items.addItem(item, itemIpfs, req.user)
         })
         .then((itm) => {
             console.log('db item', itm)
-            response.send(itm)
+            res.send(itm)
         })
         .catch((err) => {
             console.log(err)
-            response.status(500).send(err)
+            res.status(500).send(err)
         })
 })
 

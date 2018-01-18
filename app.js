@@ -23,14 +23,16 @@ const initApp = () => {
 	// TODO: Do we origin * ?
 	app.use(function (req, res, next) {
 		res.header("Access-Control-Allow-Origin", "*");
-		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, useraddres");
 		next();
 	});
 
-	// app.use((req, res, next) => {
-	// 	mongodb
-	// 	next()
-	// })
+	app.use((req, res, next) => {
+		// TODO: validation, session, ... etc.
+		// TEMP!!
+		req.user = req.headers['useraddres']
+		next()
+	})
 
 
 	http.createServer(app).listen(app.get('port'), function () {
