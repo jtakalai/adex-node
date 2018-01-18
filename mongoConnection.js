@@ -1,14 +1,28 @@
 'use strict'
 
-const mongoose = require('mongoose')
+const MongoClient = require('mongodb').MongoClient
+const url = 'mongodb://localhost:27017'
+const dbName = 'adexnode'
 
-mongoose.connect('mongodb://localhost:27017')
+let db = null
 
-const mongodb = mongoose.connection
+function connect(cb) {
+    MongoClient.connect(url, (err, client) => {
+        if (err) {
+            console.log('MongoDb connection error', err)
+        }
 
-mongodb.on('error', console.error.bind(console, 'connection error:'))
-mongodb.once('open', () => {
-    console.log('mongo db connection ready')
-})
+        console.log("Connected successfully to server")
+        db = client.db(dbName)
 
-module.exports = mongodb
+        return cb(err)
+    })
+}
+function getDb(callback) {
+    return db
+}
+
+module.exports = {
+    connect: connect,
+    getDb: getDb
+}

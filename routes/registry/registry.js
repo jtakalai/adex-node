@@ -8,7 +8,7 @@ const router = express.Router()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
-const AdUnit = require('./../../models/AdUnit')
+const Items = require('./../../models/Items')
 
 let tempDb = []
 
@@ -35,10 +35,10 @@ router.post('/registeritem', function (request, response) {
             item._ipfs = itemIpfs
             item._id = tempDb.length
 
-            return AdUnit.addItem(item, itemIpfs)
+            return Items.addItem(item, itemIpfs)
         })
         .then((itm) => {
-            // console.log('db item', itm)
+            console.log('db item', itm)
             response.send(itm)
         })
         .catch((err) => {
