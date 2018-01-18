@@ -2,23 +2,20 @@
 
 const mongoose = require('mongoose')
 const AdUnitSchema = require('./../schemas/AdUnit')
+const BaseSchema = require('./../schemas/BaseSchema')
 
 class AdUnit {
     constructor() {
+        this.baseSchema = BaseSchema
         this.adUnitSchema = AdUnitSchema
-        this.adUnitModel = mongoose.model('AdUnit', this.adUnitSchema)
-    }
 
-    getAdUnitSchema() {
-        return this.adUnitSchema
-    }
+        let Base = mongoose.model('Base', this.baseSchema)
 
-    getAdUnitModel() {
-        return this.adUnitModel
+        this.adUnitModel = Base.discriminator('AdUnit', this.adUnitSchema)
     }
 
     addNewAdUnit(item, ipfs) {
-        let AdUnitModel = this.getAdUnitModel()
+        let AdUnitModel = this.adUnitModel
         let newAdUnit = new AdUnitModel({
             description: item._description || item._meta.description,
             itemObj: item,
@@ -28,6 +25,7 @@ class AdUnit {
 
         newAdUnit.save()
 
+        console.log('newAdUnit', newAdUnit)
         return newAdUnit
     }
 }

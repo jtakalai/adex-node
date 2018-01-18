@@ -38,7 +38,7 @@ router.post('/registeritem', function (request, response) {
             return AdUnit.addNewAdUnit(item, itemIpfs)
         })
         .then((itm) => {
-            console.log('db item', itm)
+            // console.log('db item', itm)
             response.send(itm.itemObj)
         })
         .catch((err) => {

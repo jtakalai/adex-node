@@ -5,12 +5,7 @@ const Schema = mongoose.Schema
 
 // TODO: extend base schema
 let AdUnitSchema = new Schema({
-    user: String,
-    itemObj: Object,
-    ipfs: String,
-    size: String, // TODO: At the moment is string 
-    description: String,
-    updated: Number
+    size: String, // TODO: At the moment is string
 })
 
 module.exports = AdUnitSchema
