@@ -40,7 +40,7 @@ class Items {
     getUserItems(user, type) {
         return new Promise((resolve, reject) => {
 
-            collection.find({ user: user }).project({ itemObj: 1, description: 1 }).toArray((err, result) => {
+            collection.find({ user: user, type: parseInt(type) }).project({ itemObj: 1, description: 1 }).toArray((err, result) => {
                 if (err) {
                     console.log('find items err', err)
                     return reject(err)
