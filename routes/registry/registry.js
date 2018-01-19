@@ -24,7 +24,7 @@ router.post('/uploadimage', upload.single('image'), (req, res) => {
         })
 })
 
-router.post('/registeritem', function (req, res) {
+router.post('/registeritem', (req, res) => {
     //NOTE: request body is text here if use bodyParser.text()
     //TODO: decide what body data type to use
     let item = req.body
@@ -40,6 +40,17 @@ router.post('/registeritem', function (req, res) {
         .then((itm) => {
             console.log('db item', itm)
             res.send(itm)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(500).send(err)
+        })
+})
+
+router.get('/items', (req, res) => {
+    Items.getUserItems(req.user, req.query.type)
+        .then((items) => {
+            res.send(items)
         })
         .catch((err) => {
             console.log(err)

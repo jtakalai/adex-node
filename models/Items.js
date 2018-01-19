@@ -1,19 +1,26 @@
 'use strict'
 
 const db = require('./../mongoConnection').getDb()
+const collection = db.collection('items')
 
 class Items {
     addItem(item, ipfs, user) {
         return new Promise((resolve, reject) => {
-            let dbItem = {
-                user: user,
-                description: item._description || item._meta.description,
-                itemObj: item,
-                ipfs: ipfs,
-                sizeAndType: item._meta.adType + item._meta.size
+            let sizeAndType = 0
+
+            if (item._meta.adType && item._meta.size) {
+                sizeAndType = parseInt(item._meta.adType + item._meta.size)
             }
 
-            const collection = db.collection('items')
+            let dbItem = {
+                type: item._type, //unit / slot 
+                user: user,
+                description: item._description || item._meta.description, //Field only users info not in ipfs
+                itemObj: item,
+                ipfs: ipfs,
+                sizeAndType: sizeAndType || 0
+                //TODO: indexing, createdon, updatedon etc.
+            }
 
             collection.insertOne(dbItem, (err, result) => {
                 if (err) {
@@ -28,6 +35,24 @@ class Items {
 
             })
         })
+    }
+
+    getUserItems(user, type) {
+        return new Promise((resolve, reject) => {
+
+            collection.find({ user: user }).project({ itemObj: 1, description: 1 }).toArray((err, result) => {
+                if (err) {
+                    console.log('find items err', err)
+                    return reject(err)
+                }
+
+                return resolve(result)
+            })
+        })
+    }
+
+    ctrateIndexes(db) {
+        db.collection.createIndex({ user: String, sizeAndType: Number })
     }
 }
 
