@@ -16,7 +16,7 @@ function connect(cb) {
             console.log("Connected successfully to server")
             db = client.db(dbName)
 
-            Indexing.ctrateIndexes(db)
+            Indexing.createIndexes(db)
         }
 
         return cb(err)
