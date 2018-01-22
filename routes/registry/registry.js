@@ -10,8 +10,6 @@ const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
 const Items = require('./../../models/Items')
 
-let tempDb = []
-
 router.post('/uploadimage', upload.single('image'), (req, res) => {
     ipfs.addFileToIpfs(req.file.buffer)
         .then((imgIpfs) => {
@@ -29,14 +27,7 @@ router.post('/registeritem', (req, res) => {
     //TODO: decide what body data type to use
     let item = req.body
 
-    ipfs.addFileToIpfs(item)
-        .then((itemIpfs) => {
-            item = JSON.parse(item)
-            item._ipfs = itemIpfs
-            item._id = tempDb.length
-
-            return Items.addItem(item, itemIpfs, req.user)
-        })
+    Items.addItem(item, req.user)
         .then((itm) => {
             console.log('db item', itm)
             res.send(itm)

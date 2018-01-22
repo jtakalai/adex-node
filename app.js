@@ -18,8 +18,8 @@ const initApp = () => {
 	app.set('view engine', 'pug');
 	app.use(headerParser);
 	app.use(bodyParser.urlencoded({ extended: false }));
-	// app.use(bodyParser.json());
-	app.use(bodyParser.text());
+	app.use(bodyParser.json());
+	// app.use(bodyParser.text());
 
 	// TODO: Do we origin * ?
 	app.use(function (req, res, next) {
