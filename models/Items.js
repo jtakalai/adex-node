@@ -1,18 +1,25 @@
 'use strict'
 
 const db = require('./../mongoConnection').getDb()
-const collection = db.collection('items')
 const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 
+const itemsCollection = db.collection('items')
+const itemsCollectionCollection = db.collection('items_collection')
+
 class Items {
+    getCollectionByItemType(type) {
+        if (type === 'items') return itemsCollection
+        if (type === 'collection') return itemsCollectionCollection
+    }
+
     addItem(item, user) {
         let createdOn = Date.now()
         let ipfsMeta = item._meta
         ipfsMeta.createdOn = createdOn
         ipfsMeta.owner = user
 
-        if (constants.ItemIpfsByType) {
+        if (constants.items.ItemIpfsByTypeId[item._type]) {
             ipfs.addFileToIpfs(JSON.stringify(ipfsMeta))
                 .then((itemIpfs) => {
                     return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, itemIpfs, createdOn: createdOn })
@@ -44,21 +51,22 @@ class Items {
                 _archived: false
             }
 
-            collection.insertOne(dbItem, (err, result) => {
-                if (err) {
-                    console.log('insertOne err', err)
-                    return reject(err)
-                }
+            this.getCollectionByItemType(constants.items.ItemTypeByTypeId[item._type])
+                .insertOne(dbItem, (err, result) => {
+                    if (err) {
+                        console.log('insertOne err', err)
+                        return reject(err)
+                    }
 
-                return resolve(dbItem)
-            })
+                    return resolve(dbItem)
+                })
         })
     }
 
     getUserItems(user, type) {
         return new Promise((resolve, reject) => {
-
-            collection.find({ user: user, type: parseInt(type), _deleted: false })
+            this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
+                .find({ user: user, type: parseInt(type), _deleted: false })
                 .project({
                     type: 1,
                     _description: 1,
@@ -76,10 +84,6 @@ class Items {
                     return resolve(result)
                 })
         })
-    }
-
-    ctrateIndexes(db) {
-        db.collection.createIndex({ user: String, sizeAndType: Number })
     }
 }
 

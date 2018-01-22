@@ -9,9 +9,9 @@ accepts@~1.3.4:
     mime-types "~2.1.16"
     negotiator "0.6.1"
 
-"adex-constants@git+https://git@github.com/AdExBlockchain/adex-constants.git#33f59be147199fb67b305a8ad9fc8e89aae8ed47":
+"adex-constants@git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a":
   version "1.0.0"
-  resolved "git+https://git@github.com/AdExBlockchain/adex-constants.git#33f59be147199fb67b305a8ad9fc8e89aae8ed47"
+  resolved "git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a"
 
 ajv@^5.1.0:
   version "5.5.2"
