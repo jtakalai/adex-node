@@ -1,9 +1,9 @@
 'use strict'
 
 const MongoClient = require('mongodb').MongoClient
-const url = 'mongodb://localhost:27017'
+const url = 'mongodb://admin:27017'
 const dbName = 'adexnode'
-const Indexing = require('./models/Indexing')
+const Indexing = require('./models/indexing')
 
 let db = null
 
