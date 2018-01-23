@@ -14,7 +14,7 @@ mongodb.connect((err) => {
 
 const initApp = () => {
 	var app = new express();
-	app.set('port', process.env.PORT || 7878);
+	app.set('port', process.env.PORT || 9710);
 	app.set('view engine', 'pug');
 	app.use(headerParser);
 	app.use(bodyParser.urlencoded({ extended: false }));
