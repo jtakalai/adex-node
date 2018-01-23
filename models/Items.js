@@ -3,6 +3,7 @@
 const db = require('./../mongoConnection').getDb()
 const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
+const ObjectId = require('mongodb').ObjectId
 
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
@@ -20,7 +21,7 @@ class Items {
         ipfsMeta.owner = user
 
         if (constants.items.ItemIpfsByTypeId[item._type]) {
-            ipfs.addFileToIpfs(JSON.stringify(ipfsMeta))
+            return ipfs.addFileToIpfs(JSON.stringify(ipfsMeta))
                 .then((itemIpfs) => {
                     return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, itemIpfs, createdOn: createdOn })
                 })
@@ -42,6 +43,7 @@ class Items {
                 type: item._type, //unit / slot 
                 user: user,
                 _description: item._description, //Field only users info not in ipfs
+                _items: [],
                 _meta: meta, // the _meta as in ipfs
                 _ipfs: ipfs,
                 sizeAndType: sizeAndType,
@@ -59,6 +61,28 @@ class Items {
                     }
 
                     return resolve(dbItem)
+                })
+        })
+    }
+
+    flagItemDeleted({ id, type, user }) {
+        return new Promise((resolve, reject) => {
+            this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
+                .findOneAndUpdate({ user: user, _id: ObjectId(id) },
+                {
+                    $set: {
+                        _deleted: true
+                    }
+                },
+                { returnNewDocument: true }
+                , (err, res) => {
+                    if (err) {
+                        console.log('flagItemDeleted', err)
+                        return reject(err)
+                    }
+
+                    console.log(res)
+                    return resolve(res.value || {})
                 })
         })
     }
