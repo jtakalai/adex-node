@@ -60,4 +60,15 @@ router.delete('/items', (req, res) => {
         })
 })
 
+router.post('/add-to-item', (req, res) => {
+    Items.addItemToItem({ item: req.query.item, user: req.user, type: req.query.type, collection: req.query.collection })
+        .then((items) => {
+            res.send(items)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(500).send(err)
+        })
+})
+
 module.exports = router

@@ -109,6 +109,30 @@ class Items {
                 })
         })
     }
+
+    addItemToItem({ user, type, item, collection }) {
+        return new Promise((resolve, reject) => {
+            this.getCollectionByItemType('items')
+                .updateOne({ user: user, _id: ObjectId(item) },
+                {
+                    $addToSet: {
+                        _items: [ObjectId(collection)]
+                    }
+                },
+                { returnNewDocument: true }
+                , (err, res) => {
+                    if (err) {
+                        console.log('addItemToItem', err)
+                        return reject(err)
+                    }
+
+                    console.log(res)
+                    return resolve(res || {})
+                })
+
+
+        })
+    }
 }
 
 module.exports = new Items()
