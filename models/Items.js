@@ -110,27 +110,38 @@ class Items {
         })
     }
 
-    addItemToItem({ user, type, item, collection }) {
+    itemToItem({ user, type, item, collection, action }) {
+        let dbAction = {}
+
+        if (action === 'add') {
+            dbAction = {
+                $addToSet: {
+                    _items: [ObjectId(collection)]
+                }
+            }
+        } else if (action === 'remove') {
+            dbAction = {
+                $pull: {
+                    _items: [ObjectId(collection)]
+                }
+            }
+        }
+
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType('items')
-                .updateOne({ user: user, _id: ObjectId(item) },
-                {
-                    $addToSet: {
-                        _items: [ObjectId(collection)]
-                    }
-                },
-                { returnNewDocument: true }
-                , (err, res) => {
+                .updateOne(
+                { user: user, _id: ObjectId(item) },
+                dbAction,
+                { returnNewDocument: true },
+                (err, res) => {
                     if (err) {
                         console.log('addItemToItem', err)
                         return reject(err)
                     }
 
-                    console.log(res)
+                    // console.log(res)
                     return resolve(res || {})
                 })
-
-
         })
     }
 }

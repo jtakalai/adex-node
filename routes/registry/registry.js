@@ -23,7 +23,6 @@ router.post('/image', upload.single('image'), (req, res) => {
 })
 
 router.post('/items', (req, res) => {
-    //NOTE: request body is text here if use bodyParser.text()
     //TODO: decide what body data type to use
     let item = req.body
 
@@ -60,8 +59,14 @@ router.delete('/items', (req, res) => {
         })
 })
 
-router.post('/add-to-item', (req, res) => {
-    Items.addItemToItem({ item: req.query.item, user: req.user, type: req.query.type, collection: req.query.collection })
+const itemToItem = (req, res, action) => {
+    Items.itemToItem({
+        item: req.query.item,
+        user: req.user,
+        type: req.query.type,
+        collection: req.query.collection,
+        action: action
+    })
         .then((items) => {
             res.send(items)
         })
@@ -69,6 +74,14 @@ router.post('/add-to-item', (req, res) => {
             console.log(err)
             res.status(500).send(err)
         })
+}
+
+router.delete('/item-to-item', (req, res) => {
+    itemToItem(req, res, 'add')
+})
+
+router.post('/item-to-item', (req, res) => {
+    itemToItem(req, res, 'remove')
 })
 
 module.exports = router
