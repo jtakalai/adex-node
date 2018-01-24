@@ -96,6 +96,7 @@ class Items {
                     _description: 1,
                     _meta: 1,
                     _ipfs: 1,
+                    _items: 1,
                     _createdOn: 1,
                     _archived: 1
                 })
@@ -116,13 +117,13 @@ class Items {
         if (action === 'add') {
             dbAction = {
                 $addToSet: {
-                    _items: [ObjectId(collection)]
+                    _items: ObjectId(collection)
                 }
             }
         } else if (action === 'remove') {
             dbAction = {
                 $pull: {
-                    _items: [ObjectId(collection)]
+                    _items: ObjectId(collection)
                 }
             }
         }
@@ -132,15 +133,34 @@ class Items {
                 .updateOne(
                 { user: user, _id: ObjectId(item) },
                 dbAction,
-                { returnNewDocument: true },
+                // { returnNewDocument: true },
                 (err, res) => {
                     if (err) {
                         console.log('addItemToItem', err)
                         return reject(err)
                     }
 
-                    // console.log(res)
-                    return resolve(res || {})
+                    console.log('addItemToItem', res.result)
+                    return resolve(res.result || {})
+                })
+        })
+    }
+
+    getCollectionItems({ user, type, id }) {
+        return new Promise((resolve, reject) => {
+            this.getCollectionByItemType('items')
+                .find({
+                    user: user,
+                    _items: ObjectId(id)
+                })
+                .toArray((err, result) => {
+                    if (err) {
+                        console.log('find items err', err)
+                        return reject(err)
+                    }
+
+                    console.log('getCollectionByItemType result', result)
+                    return resolve(result)
                 })
         })
     }

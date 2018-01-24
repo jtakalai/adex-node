@@ -77,11 +77,23 @@ const itemToItem = (req, res, action) => {
 }
 
 router.delete('/item-to-item', (req, res) => {
+    itemToItem(req, res, 'remove')
+})
+
+//PUT?
+router.post('/item-to-item', (req, res) => {
     itemToItem(req, res, 'add')
 })
 
-router.post('/item-to-item', (req, res) => {
-    itemToItem(req, res, 'remove')
+router.get('/collection', (req, res) => {
+    Items.getCollectionItems({ user: req.user, type: req.type, d: req.id })
+        .then((items) => {
+            res.send(items)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(500).send(err)
+        })
 })
 
 module.exports = router
