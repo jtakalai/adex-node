@@ -164,6 +164,23 @@ class Items {
                 })
         })
     }
+
+    getItem({ id }) {
+        return new Promise((resolve, reject) => {
+            this.getCollectionByItemType('items')
+                .findOne({
+                    _items: ObjectId(id)
+                }, (err, item) => {
+                    if (err) {
+                        console.log('getItemById', err)
+                        return reject(err)
+                    }
+
+                    console.log('getItemById', item)
+                    return resolve(item)
+                })
+        })
+    }
 }
 
 module.exports = new Items()

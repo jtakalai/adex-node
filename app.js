@@ -44,5 +44,6 @@ const initApp = () => {
 	// Not used in adexview and collector this branch
 	// app.use('/', require('./routes/adex-collector/collector'))
 	// app.use('/', require('./routes/adex-view/adex-view'))
-	app.use('/', require('./routes/registry/registry'))
+	app.use('/', require('./routes/registry/items'))
+	app.use('/', require('./routes/registry/exchange'))
 }
