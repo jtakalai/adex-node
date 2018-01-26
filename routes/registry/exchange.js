@@ -8,12 +8,12 @@ const router = express.Router()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
-const Items = require('./../../models/Items')
+const Bids = require('./../../models/bids')
 
 router.post('/bids', (req, res) => {
     let bid = req.body
 
-    Items.placeBid({ bid: bid, user: req.user })
+    Bids.placeBid({ bid: bid, user: req.user })
         .then((dbBid) => {
             console.log('db placeBid', dbBid)
             res.send(dbBid)

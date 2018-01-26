@@ -19,15 +19,21 @@ class Bids {
 
     addBidToDb({ user, bid, createdOn }) {
         return new Promise((resolve, reject) => {
-            Items.getItemById({ id: bid.adUNit })
+            Items.getItem({ id: bid.adUnit })
                 .then((unit) => {
 
+                    //TODO: make adex-models package
                     let dbBid = {
                         state: 0, //TODO: fix it
-                        adUnit = ObjectId(bid.adUnit),
+                        adUnit: ObjectId(bid.adUnit),
+                        advertiser: user,
+                        amount: bid.amount,
                         target: bid.target,
                         timeout: bid.timeout,
-                        sizeAndType: unit.sizeAndType
+                        sizeAndType: unit.sizeAndType,
+                        acceptedTime: null,
+                        publisherConfirmation: false,
+                        advertiserConfirmation: false
                     }
 
                     bidsCollection
@@ -37,8 +43,8 @@ class Bids {
                                 return reject(err)
                             }
 
-                            console.log('addBidToDb dbItem', dbItem)
-                            return resolve(dbItem)
+                            // console.log('addBidToDb dbItem', dbBid)
+                            return resolve(dbBid)
                         })
                 })
         })
