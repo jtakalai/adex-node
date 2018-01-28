@@ -33,7 +33,7 @@ class Items {
 
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
         return new Promise((resolve, reject) => {
-            let sizeAndType = Item({ adType: meta.adType, size: meta.size })
+            let sizeAndType = Item.sizeAndType({ adType: meta.adType, size: meta.size })
 
             let dbItem = {
                 type: item._type, //unit / slot 
