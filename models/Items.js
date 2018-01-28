@@ -4,6 +4,7 @@ const db = require('./../mongoConnection').getDb()
 const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
+const { Item } = require('adex-models')
 
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
@@ -32,12 +33,7 @@ class Items {
 
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
         return new Promise((resolve, reject) => {
-            let sizeAndType = 0
-
-            if (item._meta.adType && item._meta.size) {
-                // TODO: potential bug if more than 9 ad types
-                sizeAndType = parseInt(item._meta.adType + '' + item._meta.size)
-            }
+            let sizeAndType = Item({ adType: meta.adType, size: meta.size })
 
             let dbItem = {
                 type: item._type, //unit / slot 

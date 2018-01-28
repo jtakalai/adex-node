@@ -49,6 +49,22 @@ class Bids {
                 })
         })
     }
+
+    getBids({ user, adUnit, adSlot, sizeAndType }) {
+        return new Promise((resolve, reject) => {
+            bidsCollection
+                .find({ user: user, adUnit: adUnit, adSlot: adSlot, sizeAndType })
+                .toArry((err, result) => {
+                    if (err) {
+                        console.log('getBids err', err)
+                        return reject(err)
+                    }
+
+                    console.log('getBids', result)
+                    return resolve(result)
+                })
+        })
+    }
 }
 
 module.exports = new Bids()

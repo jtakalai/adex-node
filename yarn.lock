@@ -13,9 +13,13 @@ accepts@~1.3.4:
   version "1.0.0"
   resolved "git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a"
 
-"adex-models@git+https://git@github.com/AdExBlockchain/adex-models.git#3d5c65ae873781bf76e5d3ae1c165815b851e112":
-  version "0.0.0"
-  resolved "git+https://git@github.com/AdExBlockchain/adex-models.git#3d5c65ae873781bf76e5d3ae1c165815b851e112"
+"adex-models@git+https://git@github.com/AdExBlockchain/adex-models.git#ee9183dffc9cbf7abe8b938dbb2f5728cfd6c571":
+  version "1.0.0"
+  resolved "git+https://git@github.com/AdExBlockchain/adex-models.git#ee9183dffc9cbf7abe8b938dbb2f5728cfd6c571"
+  dependencies:
+    adex-constants "git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a"
+    slug "^0.9.1"
+    unidecode "^0.1.8"
 
 ajv@^5.1.0:
   version "5.5.2"
@@ -1998,6 +2002,12 @@ simple-get@^1.4.3:
     unzip-response "^1.0.0"
     xtend "^4.0.0"
 
+slug@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/slug/-/slug-0.9.1.tgz#af08f608a7c11516b61778aa800dce84c518cfda"
+  dependencies:
+    unicode ">= 0.3.1"
+
 sntp@2.x.x:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/sntp/-/sntp-2.1.0.tgz#2c6cec14fedc2222739caf9b5c3d85d1cc5a2cc8"
@@ -2242,6 +2252,14 @@ unbzip2-stream@^1.0.9:
 underscore@1.8.3:
   version "1.8.3"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.8.3.tgz#4f3fb53b106e6097fcf9cb4109f2a5e9bdfa5022"
+
+"unicode@>= 0.3.1":
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/unicode/-/unicode-10.0.0.tgz#e5d51c1db93b6c71a0b879e0b0c4af7e6fdf688e"
+
+unidecode@^0.1.8:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/unidecode/-/unidecode-0.1.8.tgz#efbb301538bc45246a9ac8c559d72f015305053e"
 
 unpipe@1.0.0, unpipe@~1.0.0:
   version "1.0.0"
