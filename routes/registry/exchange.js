@@ -27,7 +27,8 @@ router.post('/bids', (req, res) => {
 router.get('/bids', (req, res) => {
     let bid = req.body
 
-    Bids.getBids({ adUnit: req.query.adUnit, adSlot: req.query.adSlot, sizeAndType: req.query.sizeAndType, user: req.user })
+    //NOTE: unit and slot because of adblocker
+    Bids.getBids({ adUnit: req.query.unit, adSlot: req.query.slot, sizeAndType: req.query.sizeAndType, user: req.user })
         .then((dbBid) => {
             console.log('db getBids', dbBid)
             res.send(dbBid)
