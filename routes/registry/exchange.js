@@ -26,9 +26,19 @@ router.post('/bids', (req, res) => {
 
 router.get('/bids', (req, res) => {
     let bid = req.body
+    let query = req.query
+    let action = null
 
     //NOTE: unit and slot because of adblocker
-    Bids.getBids({ adUnit: req.query.unit, adSlot: req.query.slot, sizeAndType: req.query.sizeAndType, user: req.user })
+    if (query.unit) {
+        action = Bids.getAdUnitBids({ user: req.user, adUnit: query.unit })
+    } else if (query.slot) {
+        action = Bids.getSlotBids({ user: req.user, adSlot: query.slot })
+    } else if (query.sizeAndType || query.sizeAndType === '0') {
+        action = Bids.getNotAcceptedBidsBySizeAndType({ sizeAndType: query.sizeAndType })
+    }
+
+    action
         .then((dbBid) => {
             console.log('db getBids', dbBid)
             res.send(dbBid)

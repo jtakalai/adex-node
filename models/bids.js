@@ -24,7 +24,7 @@ class Bids {
 
                     //TODO: make adex-models package
                     let dbBid = {
-                        state: 0, //TODO: fix it
+                        state: constants.exchange.BID_STATES.DoesNotExist.id, //TODO: fix it
                         adUnit: ObjectId(bid.adUnit),
                         advertiser: user,
                         amount: bid.amount,
@@ -50,22 +50,44 @@ class Bids {
         })
     }
 
-    getBids({ user, adUnit, adSlot, sizeAndType }) {
+    getAdUnitBids({ user, adUnit }) {
+        let query = {
+            advertiser: user,
+            adUnit: ObjectId(adUnit)
+        }
+
+        return this.getBids(query)
+    }
+
+    getNotAcceptedBidsBySizeAndType({ sizeAndType }) {
+        // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
+        let query = {
+            sizeAndType: parseInt(sizeAndType),
+            state: constants.exchange.BID_STATES.DoesNotExist.id
+        }
+
+        return this.getBids(query)
+    }
+
+    getSlotBids({ user, adSlot }) {
+        let query = {
+            publisher: user,
+            adSlot: ObjectId(adSlot)
+        }
+
+        return this.getBids(query)
+    }
+
+    getBids(query) {
         return new Promise((resolve, reject) => {
             bidsCollection
-                .find({
-                    advertiser: user,
-                    adUnit: ObjectId(adUnit),
-                    //  adSlot: adSlot, 
-                    //  sizeAndType: sizeAndType 
-                })
+                .find(query)
                 .toArray((err, result) => {
                     if (err) {
                         console.log('getBids err', err)
                         return reject(err)
                     }
 
-                    console.log('getBids', result)
                     return resolve(result)
                 })
         })
