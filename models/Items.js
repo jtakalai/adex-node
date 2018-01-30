@@ -126,18 +126,18 @@ class Items {
 
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType('items')
-                .updateOne(
+                .findOneAndUpdate(
                 { user: user, _id: ObjectId(item) },
                 dbAction,
-                // { returnNewDocument: true },
+                { returnOriginal: false },
                 (err, res) => {
                     if (err) {
                         console.log('addItemToItem', err)
                         return reject(err)
                     }
 
-                    console.log('addItemToItem', res.result)
-                    return resolve(res.result || {})
+                    // console.log('addItemToItem', res.value)
+                    return resolve(res.value || {})
                 })
         })
     }
@@ -172,7 +172,7 @@ class Items {
                         return reject(err)
                     }
 
-                    console.log('getItemById', item)
+                    // console.log('getItemById', item)
                     return resolve(item)
                 })
         })
