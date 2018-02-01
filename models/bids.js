@@ -5,6 +5,7 @@ const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 const Items = require('./items')
+const { Bid } = require('adex-models')
 
 const bidsCollection = db.collection('bids')
 
@@ -21,20 +22,20 @@ class Bids {
         return new Promise((resolve, reject) => {
             Items.getItem({ id: bid.adUnit })
                 .then((unit) => {
+                    let createdOn = Date.now()
+                    let bidInst = new Bid(bid)
+                    bid.state = constants.exchange.BID_STATES.DoesNotExist.id
+                    bidInst.createdOn = createdOn
+                    bidInst.adUnit = ObjectId(bid.adUnit)
+                    bidInst.advertiser = user
 
-                    //TODO: make adex-models package
-                    let dbBid = {
-                        state: constants.exchange.BID_STATES.DoesNotExist.id, //TODO: fix it
-                        adUnit: ObjectId(bid.adUnit),
-                        advertiser: user,
-                        amount: bid.amount,
-                        target: bid.target,
-                        timeout: bid.timeout,
-                        sizeAndType: unit.sizeAndType,
-                        acceptedTime: null,
-                        publisherConfirmation: false,
-                        advertiserConfirmation: false
-                    }
+                    //Db only
+                    bidInst.sizeAndType = unit.sizeAndType // index
+
+                    let dbBid = bidInst.plainObj()
+                    
+                    // NOTE: to be sure that mongo will give the id
+                    delete dbBid._id
 
                     bidsCollection
                         .insertOne(dbBid, (err, result) => {
@@ -52,8 +53,8 @@ class Bids {
 
     getAdUnitBids({ user, adUnit }) {
         let query = {
-            advertiser: user,
-            adUnit: ObjectId(adUnit)
+            _advertiser: user,
+            _adUnit: ObjectId(adUnit)
         }
 
         return this.getBids(query)
@@ -63,7 +64,7 @@ class Bids {
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
-            state: constants.exchange.BID_STATES.DoesNotExist.id
+            _state: constants.exchange.BID_STATES.DoesNotExist.id
         }
 
         return this.getBids(query)
@@ -71,8 +72,8 @@ class Bids {
 
     getSlotBids({ user, adSlot }) {
         let query = {
-            publisher: user,
-            adSlot: ObjectId(adSlot)
+            _publisher: user,
+            _adSlot: ObjectId(adSlot)
         }
 
         return this.getBids(query)
