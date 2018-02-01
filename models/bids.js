@@ -11,10 +11,6 @@ const bidsCollection = db.collection('bids')
 
 class Bids {
     placeBid({ bid, user }) {
-        let createdOn = Date.now()
-
-        bid.createdOn = createdOn
-
         return this.addBidToDb({ user: user, bid: bid })
     }
 
@@ -33,7 +29,7 @@ class Bids {
                     bidInst.sizeAndType = unit.sizeAndType // index
 
                     let dbBid = bidInst.plainObj()
-                    
+
                     // NOTE: to be sure that mongo will give the id
                     delete dbBid._id
 
