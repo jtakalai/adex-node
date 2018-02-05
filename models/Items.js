@@ -24,10 +24,10 @@ class Items {
         if (constants.items.ItemIpfsByTypeId[item._type]) {
             return ipfs.addFileToIpfs(JSON.stringify(ipfsMeta))
                 .then((itemIpfs) => {
-                    return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, itemIpfs, createdOn: createdOn })
+                    return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, ipfs: itemIpfs, createdOn: createdOn })
                 })
         } else {
-            return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, createdOn: createdOn })
+            return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, ipfs: itemIpfs, createdOn: createdOn })
         }
     }
 
