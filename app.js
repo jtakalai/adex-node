@@ -30,36 +30,25 @@ const initApp = () => {
 	// app.use(cookieParser());
 
 	app.use((req, res, next) => {
+		//TODO: encrypted usersig?
 		let usersig = req.headers['usersig']
+		if (usersig) {
+			redisClient.get(usersig, (err, reply) => {
+				if (err) {
+					console.log('redis err', err)
+				}
+				if (reply) {
+					console.log('reply', reply.toString())
+					req.signedUser = reply
+				}
 
-		redisClient.get(usersig, (err, reply) => {
-			if (err) {
-				console.log('redis err', err)
 				return next()
-			}
-			if (reply) {
-				console.log('reply', (reply || '').toString())
-				req.signedUser = replay
-				next()
-			}
-		})
+			})
+		} else {
+			return next()
+		}
 	})
 
-	// app.use(session({
-	// 	store: new RedisStore({
-	// 		host: 'adex-redis',
-	// 		logErrors: true
-	// 	}),
-	// 	key: 'userid',
-	// 	secret: 'ooShaethophai8to',
-	// 	resave: false,
-	// 	saveUninitialized: false,
-	// 	cookie: {
-	// 		expires: 600000
-	// 	}
-	// }));
-
-	// TODO: Do we origin * ?
 	app.use(function (req, res, next) {
 		res.header("Access-Control-Allow-Origin", "*")
 		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, useraddres, usersig")
@@ -68,8 +57,6 @@ const initApp = () => {
 	});
 
 	app.use((req, res, next) => {
-
-		console.log('kor')
 		// TODO: validation, session, ... etc.
 		// TEMP!!
 		// if (!req.session || !req.session.user) {
@@ -82,43 +69,8 @@ const initApp = () => {
 
 
 	http.createServer(app).listen(app.get('port'), function () {
-		console.log("Express server listening on port " + app.get('port'));
-	});
-
-	// // route for user Login
-	// app.route('/login')
-	// 	.get((req, res) => {
-	// 		let token = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
-	// 		console.log('token', token)
-	// 		res.cookie('authToken', token)
-	// 		res.send(token)
-	// 	})
-	// 	.post((req, res) => {
-	// 		var userid = req.body.userid,
-	// 			signature = req.body.signature;
-
-	// 		// console.log('User id ' + req.body.userid + ', token ' + req.cookies.authToken + ' signature ' + req.body.signature);
-
-	// 		if (req.session === undefined) {
-	// 			res.status(500).send('Internal error');
-	// 			return;
-	// 		}
-
-	// 		try {
-	// 			var user = web3.eth.accounts.recover(web3.eth.accounts.hashMessage(req.cookies.authToken), signature);
-	// 		} catch (err) {
-	// 			console.log('Error verifying signature ' + err);
-	// 			res.status(401).send('Error verifying signature ' + err);
-	// 			return;
-	// 		}
-
-	// 		if (user === userid) {
-	// 			req.session.user = user;
-	// 			res.redirect('/');
-	// 		} else {
-	// 			res.redirect('/login');
-	// 		}
-	// 	});
+		console.log("Express server listening on port " + app.get('port'))
+	})
 
 	app.use('/', require('./routes/auth/auth'))
 

@@ -19,23 +19,18 @@ router.post('/auth', (req, res) => {
         signature = req.query.signature,
         authToken = req.query.authToken
 
-    // console.log('User id ' + req.body.userid + ', token ' + req.cookies.authToken + ' signature ' + req.body.signature);
-
-    if (req.session === undefined) {
-        res.status(500).send('Internal error')
-        return;
-    }
+    // console.log('User id ' + userid + ', token ' + authToken + ' signature ' + signature)
 
     try {
-        var user = web3.eth.accounts.recover(web3.eth.accounts.hashMessage(authToken), signature);
+        var user = web3.eth.accounts.recover(web3.eth.accounts.hashMessage(authToken), signature)
     } catch (err) {
         console.log('Error verifying signature ' + err)
         res.status(401).send('Error verifying signature ' + err)
-        return;
+        return
     }
 
     if (user === userid) {
-        redisClient.hset(signature, user, authToken)
+        redisClient.set(signature, user)
         res.send('OK')
     } else {
         res.redirect('/auth')
