@@ -16,13 +16,13 @@ class Bids {
 
     addBidToDb({ user, bid, createdOn }) {
         return new Promise((resolve, reject) => {
-            Items.getItem({ id: bid.adUnit })
+            Items.getItem({ id: bid._adUnit })
                 .then((unit) => {
                     let createdOn = Date.now()
                     let bidInst = new Bid(bid)
                     bid.state = constants.exchange.BID_STATES.DoesNotExist.id
                     bidInst.createdOn = createdOn
-                    bidInst.adUnit = ObjectId(bid.adUnit)
+                    bidInst.adUnit = ObjectId(bid._adUnit)
                     bidInst.advertiser = user
 
                     //Db only
