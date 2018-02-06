@@ -8,30 +8,32 @@ const nacl = require('tweetnacl');
 nacl.util = require('tweetnacl-util');
 const ed25519 = require('ed25519');
 
+var redisClient = require('./../../redisInit')
+
 const pid = process.pid;
 
-var redisClient = null;
+
 var scriptManager = null;
 var EXPIRY_INTERVAL = 2678400;
 var MSECS_IN_SEC = 1000;
-var dbPort = process.env.DBPORT || 6379;
-var dbHost = process.env.DBHOST || '127.0.0.1';
+// var dbPort = process.env.DBPORT || 6379;
+// var dbHost = process.env.DBHOST || '127.0.0.1';
 
-redisInit();
+// redisInit();
 redisLoadScript();
 registerEndpoint();
 
 console.log('Database server is on ' + dbHost + ', port ' + dbPort);
 
-function redisInit() {
-    redisClient = redis.createClient(dbPort, dbHost);
-    redisClient.on('ready', function () {
-        console.log('Redis is ready');
-    });
-    redisClient.on('error', function () {
-        process.exit(1);
-    });
-}
+// function redisInit() {
+//     redisClient = redis.createClient(dbPort, dbHost);
+//     redisClient.on('ready', function () {
+//         console.log('Redis is ready');
+//     });
+//     redisClient.on('error', function () {
+//         process.exit(1);
+//     });
+// }
 
 function redisLoadScript() {
     scriptManager = new scripto(redisClient);
