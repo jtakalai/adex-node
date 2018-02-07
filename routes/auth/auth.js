@@ -8,7 +8,7 @@ const router = express.Router()
 let web3 = new Web3()
 let { SIGN_TYPES } = require('adex-constants').exchange
 
-const authPersonal = ({ signature, authToken, userid }) => {
+const authPersonal = ({ signature, authToken }) => {
     let error = null,
         user
 
@@ -33,13 +33,17 @@ router.post('/auth', (req, res) => {
         user = null,
         authRes = {}
 
+        console.log('req.query', req.query)
+
     switch (sigMode) {
 
         case SIGN_TYPES.Personal.id:
-            authRes = authPersonal({ signature: signature, authToken: authToken, userid: userid })
+            authRes = authPersonal({ signature: signature, authToken: authToken })
             break
-        case SIGN_TYPES.MetamaskTyped.id:
-            // Auth MetamaskTyped
+        case SIGN_TYPES.Metamask.id:
+            // Auth Metamask
+            //TEMP
+            authRes = authPersonal({ signature: signature, authToken: authToken })
             break
         case SIGN_TYPES.Trezor.id:
             // Auth Trezor
@@ -55,6 +59,7 @@ router.post('/auth', (req, res) => {
     err = authRes.err
     user = authRes.user
 
+    console.log('authRes', authRes)
     // console.log('User id ' + userid + ', token ' + authToken + ' signature ' + signature)
     if (err) {
         console.log('Error verifying signature ' + err)
@@ -63,17 +68,19 @@ router.post('/auth', (req, res) => {
     }
 
     if (user.toLowerCase() === userid.toLowerCase()) {
-        redisClient.set('session:' + signature, JSON.stringify({'user': user, 'authToken': authToken}), (err, result) => {
+        redisClient.set('session:' + signature, JSON.stringify({ 'user': user, 'authToken': authToken }), (err, result) => {
             if (err != null) {
-                console.log('Error saving session data for user ' +  user +' :' + err);
+                console.log('Error saving session data for user ' + user + ' :' + err);
             } else {
                 res.send('OK')
                 redisClient.expire('session:' + signature, 2678400 /* var EXPIRY_INTERVAL = */, (err, res) => { })
             }
         })
     } else {
-        res.redirect('/auth')
+        res.send('ERR')
     }
+
+    return
 })
 
 module.exports = router

@@ -25,12 +25,16 @@ const initApp = () => {
 	app.set('view engine', 'pug');
 	app.use(headerParser);
 	app.use(bodyParser.urlencoded({ extended: false }));
-	app.use(bodyParser.json());
+	app.use(bodyParser.json())
 
-	app.use('/', require('./routes/auth/auth'))
+	app.use(function (req, res, next) {
+		res.header("Access-Control-Allow-Origin", "*")
+		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, usersignature, authtoken")
+		res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+		next()
+	})
 
-	app.use((req, res, next) => {
-		//TODO: encrypted usersig?
+	const signatureCheck = ((req, res, next) => {
 		let usersig = req.headers['usersignature']
 
 		if (usersig) {
@@ -42,7 +46,7 @@ const initApp = () => {
 				}
 				if (reply) {
 					console.log('reply:', reply.toString())
-					req.signedUser = reply
+					req.user = reply.toString()
 					return next()
 				} else {
 					res.status(401).send('Authentication failed');
@@ -54,26 +58,6 @@ const initApp = () => {
 		}
 	})
 
-	app.use(function (req, res, next) {
-		res.header("Access-Control-Allow-Origin", "*")
-		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, useraddress, usersignature, authtoken")
-		res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
-		next()
-	});
-
-	app.use((req, res, next) => {
-		// TODO: validation, session, ... etc.
-		// TEMP!!
-		// if (!req.session || !req.session.user) {
-		// 	res.redirect('/login');
-		// } else {
-		req.user = req.headers['useraddress']
-		req.authToken = req.headers['authtoken']
-		next()
-		// }
-	})
-
-
 	http.createServer(app).listen(app.get('port'), function () {
 		console.log("Express server listening on port " + app.get('port'))
 	})
@@ -81,6 +65,7 @@ const initApp = () => {
 	// Not used in adexview and collector this branch
 	// app.use('/', require('./routes/adex-collector/collector'))
 	// app.use('/', require('./routes/adex-view/adex-view'))
-	app.use('/', require('./routes/registry/items'))
-	app.use('/', require('./routes/registry/exchange'))
+	app.use('/', require('./routes/auth/auth'))
+	app.use('/', signatureCheck, require('./routes/registry/items'))
+	app.use('/', signatureCheck, require('./routes/registry/exchange'))
 }

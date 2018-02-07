@@ -16,8 +16,8 @@
   "license": "MIT",
   "homepage": "https://bitbucket.org/stremio/adex-node#readme",
   "dependencies": {
-    "adex-constants": "git+https://git@github.com/AdExBlockchain/adex-constants.git#3e1f2f35fdd77714b6a7c3bd669715c827c93c84",
-    "adex-models": "git+https://git@github.com/AdExBlockchain/adex-models.git#86a6cfd178444d5c10a92dd6b790ad46ebb4e120",
+    "adex-constants": "git+https://git@github.com/AdExBlockchain/adex-constants.git#c5b73cae61f4ca0dd96f81fbffa67019aa100a16",
+    "adex-models": "git+https://git@github.com/AdExBlockchain/adex-models.git#c31c7ff71b050e969b7b673dde86030a5308666f",
     "body-parser": "^1.18.2",
     "cluster": "^0.7.7",
     "connect-redis": "^3.3.3",
