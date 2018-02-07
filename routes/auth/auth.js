@@ -63,12 +63,12 @@ router.post('/auth', (req, res) => {
     }
 
     if (user.toLowerCase() === userid.toLowerCase()) {
-        redisClient.set(signature, JSON.stringify({'user': user, 'authToken': authToken}), (err, result) => {
+        redisClient.set('session:' + signature, JSON.stringify({'user': user, 'authToken': authToken}), (err, result) => {
             if (err != null) {
                 console.log('Error saving session data for user ' +  user +' :' + err);
             } else {
                 res.send('OK')
-                redisClient.expire(signature, 300, (err, res) => { })
+                redisClient.expire('session:' + signature, 2678400 /* var EXPIRY_INTERVAL = */, (err, res) => { })
             }
         })
     } else {

@@ -33,19 +33,20 @@ const initApp = () => {
 		//TODO: encrypted usersig?
 		let usersig = req.headers['usersignature']
 
-		console.log(req.headers);
 		if (usersig) {
 			redisClient.get('session:' + usersig, (err, reply) => {
+
 				if (err) {
 					console.log('redis err', err)
-					res.status(403).send('Authentication required');
+					res.status(500).send('Internal error');
 				}
 				if (reply) {
-					console.log('reply', reply.toString())
+					console.log('reply:', reply.toString())
 					req.signedUser = reply
+					return next()
+				} else {
+					res.status(401).send('Authentication failed');
 				}
-
-				return next()
 			})
 		} else {
 			console.log('UserSignature header missing');
