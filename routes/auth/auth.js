@@ -62,9 +62,15 @@ router.post('/auth', (req, res) => {
         return
     }
 
-    if (user === userid) {
-        redisClient.set(signature, user)
-        res.send('OK')
+    if (user.toLowerCase() === userid.toLowerCase()) {
+        redisClient.set(signature, JSON.stringify({'user': user, 'authToken': authToken}), (err, result) => {
+            if (err != null) {
+                console.log('Error saving session data for user ' +  user +' :' + err);
+            } else {
+                res.send('OK')
+                redisClient.expire(signature, 300, (err, res) => { })
+            }
+        })
     } else {
         res.redirect('/auth')
     }
