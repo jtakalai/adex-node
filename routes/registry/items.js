@@ -8,7 +8,7 @@ const router = express.Router()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
-const Items = require('./../../models/Items')
+const Items = require('./../../models/items')
 
 router.post('/image', upload.single('image'), (req, res) => {
     ipfs.addFileToIpfs(req.file.buffer)
