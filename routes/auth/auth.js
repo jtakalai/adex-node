@@ -7,13 +7,6 @@ var redisClient = require('./../../redisInit')
 const router = express.Router()
 let web3 = new Web3()
 
-router.get('/auth', (req, res) => {
-    let token = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
-    res.cookie('authToken', token)
-    return res.send(token.toString())
-
-})
-
 router.post('/auth', (req, res) => {
     var userid = req.query.userid,
         signature = req.query.signature,
