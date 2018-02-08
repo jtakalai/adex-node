@@ -28,14 +28,23 @@ const initApp = () => {
 	app.use(bodyParser.json())
 
 	app.use(function (req, res, next) {
-		res.header("Access-Control-Allow-Origin", "*")
-		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, usersignature, authtoken")
+		res.header('Access-Control-Allow-Origin', '*')
+		res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-User-Signature, X-User-Address, X-Auth-Token')
 		res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
 		next()
 	})
 
 	const signatureCheck = ((req, res, next) => {
-		let usersig = req.headers['usersignature']
+		/*
+		 * NOTE: when use fetch first is sent OPTIONS req but it does not contains the values for the custom header (just as Access-Control-Request-Headers)
+		 * for some reason fetch mode 'cors' sends GET that acts like OPTIONS (no values for custom header)
+		 * So we need to skip that check for OPTIONS requests
+		 */
+		if (req.method === 'OPTIONS') {
+			next()
+		}
+
+		let usersig = req.headers['x-user-signature']
 
 		if (usersig) {
 			redisClient.get('session:' + usersig, (err, reply) => {
@@ -53,7 +62,7 @@ const initApp = () => {
 				}
 			})
 		} else {
-			console.log('UserSignature header missing');
+			console.log('X-User-Signature header missing');
 			res.status(403).send('Authentication required');
 		}
 	})
