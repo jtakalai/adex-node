@@ -80,14 +80,14 @@ router.post('/auth', (req, res) => {
                 // console.log('User id ' + userid + ', token ' + authToken + ' signature ' + signature)
 
                 if (recoveredAddr.toLowerCase() === userid.toLowerCase()) {
-                    redisClient.set('session:' + signature, JSON.stringify({ 'user': recoveredAddr, 'authToken': authToken }), (err, result) => {
+                    redisClient.set('session:' + signature, JSON.stringify({ 'user': recoveredAddr, 'authToken': authToken, 'sigMode': sigMode }), (err, result) => {
                         if (err != null) {
                             console.log('Error saving session data for user ' + recoveredAddr + ' :' + err);
                         } else {
                             redisClient.expire('session:' + signature, 2678400 /* var EXPIRY_INTERVAL = */, (err, res) => { })
                             // TODO: return expire time (handle it on the dapp)
                             res.send('OK')
-                            return                            
+                            return
                         }
                     })
                 } else {
