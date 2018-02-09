@@ -41,7 +41,7 @@ const initApp = () => {
 		 * So we need to skip that check for OPTIONS requests
 		 */
 		if (req.method === 'OPTIONS') {
-			next()
+			return next()
 		}
 
 		let usersig = req.headers['x-user-signature']
@@ -55,7 +55,7 @@ const initApp = () => {
 				}
 				if (reply) {
 					console.log('reply:', reply.toString())
-					req.user = reply.toString()
+					req.user = (JSON.parse(reply)).user.toString()
 					return next()
 				} else {
 					res.status(401).send('Authentication failed');
