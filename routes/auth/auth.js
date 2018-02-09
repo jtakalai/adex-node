@@ -2,43 +2,10 @@
 
 const express = require('express')
 const multer = require('multer')
-const Web3 = require('web3')
 var redisClient = require('./../../redisInit')
 const router = express.Router()
-let web3 = new Web3()
 let { SIGN_TYPES } = require('adex-constants').exchange
-const sigUtil = require('eth-sig-util')
-
-const authPersonal = ({ signature, authToken }) => {
-    return new Promise((resolve, reject) => {
-        let error = null,
-            user
-        try {
-            user = web3.eth.accounts.recover(web3.eth.accounts.hashMessage(authToken), signature)
-            resolve(user)
-        } catch (err) {
-            reject(err)
-        }
-    })
-}
-
-const authMetamaskTyped = ({ signature, authToken, typedData }) => {
-    return new Promise((resolve, reject) => {
-        let error = null,
-            user
-
-        try {
-            user = sigUtil.recoverTypedSignature({
-                data: typedData,
-                sig: signature
-            })
-            resolve(user)
-        } catch (err) {
-            error = err
-            reject(err)
-        }
-    })
-}
+const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
 
 router.post('/auth', (req, res) => {
     var userid = req.body.userid,
@@ -53,12 +20,12 @@ router.post('/auth', (req, res) => {
     switch (sigMode) {
 
         case SIGN_TYPES.Personal.id:
-            authRes = authPersonal({ signature: signature, authToken: authToken })
+            authRes = getAddrFromPersonalSignedMsg({ signature: signature, msg: authToken })
             break
         case SIGN_TYPES.Metamask.id:
             // Auth Metamask
             //TEMP
-            authRes = authMetamaskTyped({ signature: signature, authToken: authToken, typedData: typedData })
+            authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
             break
         case SIGN_TYPES.Trezor.id:
             // Auth Trezor

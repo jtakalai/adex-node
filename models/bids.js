@@ -6,43 +6,62 @@ const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 const Items = require('./items')
 const { Bid } = require('adex-models')
+const { getAddrFromEipTypedSignedMsg } = require('./../services/web3/utils')
 
 const bidsCollection = db.collection('bids')
 
 class Bids {
     placeBid({ bid, user }) {
+        console.log('bid', bid)
         return this.addBidToDb({ user: user, bid: bid })
     }
 
     addBidToDb({ user, bid, createdOn }) {
         return new Promise((resolve, reject) => {
-            Items.getItem({ id: bid._adUnit })
-                .then((unit) => {
-                    let createdOn = Date.now()
-                    let bidInst = new Bid(bid)
-                    bid.state = constants.exchange.BID_STATES.DoesNotExist.id
-                    bidInst.createdOn = createdOn
-                    bidInst.adUnit = ObjectId(bid._adUnit)
-                    bidInst.advertiser = user
+            let bidInst = new Bid(bid)
+            let typedData = bidInst.typed
 
-                    //Db only
-                    bidInst.sizeAndType = unit.sizeAndType // index
+            getAddrFromEipTypedSignedMsg({ signature: bidInst.signature.signature, typedData: bidInst.typed })
+                .then((signAddr) => {
+                    console.log('signAddr', signAddr)
+                    console.log('user', user)
 
-                    let dbBid = bidInst.plainObj()
+                    if (signAddr.toLowerCase() === user.toLowerCase()) {
+                        Items.getItem({ id: bid._adUnit })
+                            .then((unit) => {
+                                let createdOn = Date.now()
 
-                    // NOTE: to be sure that mongo will give the id
-                    delete dbBid._id
+                                bid.state = constants.exchange.BID_STATES.DoesNotExist.id
+                                bidInst.createdOn = createdOn
+                                bidInst.adUnit = ObjectId(bid._adUnit)
+                                bidInst.advertiser = user
 
-                    bidsCollection
-                        .insertOne(dbBid, (err, result) => {
-                            if (err) {
-                                console.log('addBidToDb err', err)
-                                return reject(err)
-                            }
+                                //Db only
+                                bidInst.sizeAndType = unit.sizeAndType // index
 
-                            // console.log('addBidToDb dbItem', dbBid)
-                            return resolve(dbBid)
-                        })
+                                let dbBid = bidInst.plainObj()
+
+                                // NOTE: to be sure that mongo will give the id
+                                delete dbBid._id
+
+                                bidsCollection
+                                    .insertOne(dbBid, (err, result) => {
+                                        if (err) {
+                                            console.log('addBidToDb err', err)
+                                            return reject(err)
+                                        }
+
+                                        // console.log('addBidToDb dbItem', dbBid)
+                                        return resolve(dbBid)
+                                    })
+                            })
+                    }
+                    else {
+                        return reject('Invalid signature')
+                    }
+                })
+                .catch((err) => {
+                    return reject(err)
                 })
         })
     }
