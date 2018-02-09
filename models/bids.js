@@ -27,13 +27,18 @@ class Bids {
                     console.log('user', user)
 
                     if (signAddr.toLowerCase() === user.toLowerCase()) {
-                        Items.getItem({ id: bid._adUnit })
+                        Items.getItem({ id: bidInst.adUnitId, user: user })
                             .then((unit) => {
-                                let createdOn = Date.now()
+                                if (!unit) return reject('invalid ad unit')
 
-                                bid.state = constants.exchange.BID_STATES.DoesNotExist.id
+                                console.log('unit', unit)
+                                console.log('bidInst', bidInst)
+
+                                let createdOn = Date.now()
+                                console.log('createdOn', createdOn)
+                                bidInst.state = constants.exchange.BID_STATES.DoesNotExist.id
                                 bidInst.createdOn = createdOn
-                                bidInst.adUnit = ObjectId(bid._adUnit)
+                                bidInst.adUnit = ObjectId(bidInst.adUnitId)
                                 bidInst.advertiser = user
 
                                 //Db only
