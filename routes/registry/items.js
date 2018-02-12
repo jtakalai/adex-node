@@ -48,6 +48,20 @@ router.get('/items', (req, res) => {
         })
 })
 
+router.get('/items/:id', (req, res) => {
+    let id = req.params.id
+
+    Items.getItem({ id: id })
+        .then((item) => {
+            if (!item) return res.status(404).send('ITEM_NOT_FOUND')
+            return res.send(item)
+        })
+        .catch((err) => {
+            console.log(err)
+            return res.status(500).send(err)
+        })
+})
+
 router.delete('/items', (req, res) => {
     Items.flagItemDeleted({ id: req.query.id, user: req.user, type: req.query.type })
         .then((items) => {
