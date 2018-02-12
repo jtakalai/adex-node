@@ -38,7 +38,7 @@ class Bids {
                                 console.log('createdOn', createdOn)
                                 bidInst.state = constants.exchange.BID_STATES.DoesNotExist.id
                                 bidInst.createdOn = createdOn
-                                bidInst.adUnit = ObjectId(bidInst.adUnitId)
+                                bidInst.adUnitId = ObjectId(bidInst.adUnitId)
                                 bidInst.advertiser = user
 
                                 //Db only
@@ -71,20 +71,22 @@ class Bids {
         })
     }
 
-    getAdUnitBids({ user, adUnit }) {
+    getAdUnitBids({ user, adUnitId }) {
         let query = {
             _advertiser: user,
-            _adUnit: ObjectId(adUnit)
+            _adUnitId: ObjectId(adUnitId)
         }
 
         return this.getBids(query)
     }
 
-    getNotAcceptedBidsBySizeAndType({ sizeAndType }) {
+    getNotAcceptedBidsBySizeAndType({ sizeAndType, user }) {
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
-            _state: constants.exchange.BID_STATES.DoesNotExist.id
+            _state: constants.exchange.BID_STATES.DoesNotExist.id,
+            _signature: { $exists: true },
+            _advertiser: { $ne: user } // TODO: keep all addresses in lower case
         }
 
         return this.getBids(query)
@@ -93,7 +95,7 @@ class Bids {
     getSlotBids({ user, adSlot }) {
         let query = {
             _publisher: user,
-            _adSlot: ObjectId(adSlot)
+            _adSlotId: ObjectId(adSlotId)
         }
 
         return this.getBids(query)

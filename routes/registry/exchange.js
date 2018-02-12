@@ -26,16 +26,17 @@ router.post('/bids', (req, res) => {
 
 router.get('/bids', (req, res) => {
     let bid = req.body
-    let query = req.query
+    let query = req.query    
+    let user = req.user
     let action = null
 
     //NOTE: unit and slot because of adblocker
     if (query.unit) {
-        action = Bids.getAdUnitBids({ user: req.user, adUnit: query.unit })
+        action = Bids.getAdUnitBids({ user: user, adUnitId: query.unit })
     } else if (query.slot) {
-        action = Bids.getSlotBids({ user: req.user, adSlot: query.slot })
+        action = Bids.getSlotBids({ user: user, adSlotId: query.slot })
     } else if (query.sizeAndType || query.sizeAndType === '0') {
-        action = Bids.getNotAcceptedBidsBySizeAndType({ sizeAndType: query.sizeAndType })
+        action = Bids.getNotAcceptedBidsBySizeAndType({ sizeAndType: query.sizeAndType, user: user })
     }
 
     action
