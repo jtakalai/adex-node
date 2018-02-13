@@ -19,19 +19,16 @@ router.post('/auth', (req, res) => {
 
     switch (sigMode) {
 
-        case SIGN_TYPES.Personal.id:
+        case SIGN_TYPES.EthPersonal.id:
             authRes = getAddrFromPersonalSignedMsg({ signature: signature, msg: authToken })
             break
-        case SIGN_TYPES.Metamask.id:
+        case SIGN_TYPES.Eip.id:
             // Auth Metamask
             //TEMP
             authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
             break
         case SIGN_TYPES.Trezor.id:
             // Auth Trezor
-            break
-        case SIGN_TYPES.Ledger.id:
-            // Auth Ledger
             break
 
         default:
