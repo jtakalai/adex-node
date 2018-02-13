@@ -7,6 +7,8 @@ const router = express.Router()
 let { SIGN_TYPES } = require('adex-constants').exchange
 const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
 
+const EXPIRY_INTERVAL = 1000 * 60 * 60 * 24 * 1 // 1 Day //TODO: 30?
+
 router.post('/auth', (req, res) => {
     var userid = req.body.userid,
         signature = req.body.signature,
@@ -48,9 +50,10 @@ router.post('/auth', (req, res) => {
                         if (err != null) {
                             console.log('Error saving session data for user ' + recoveredAddr + ' :' + err);
                         } else {
-                            redisClient.expire('session:' + signature, 2678400 /* var EXPIRY_INTERVAL = */, (err, res) => { })
+                            redisClient.expire('session:' + signature, EXPIRY_INTERVAL, (err, res) => { })
+                            let expiryTime = Date.now() + EXPIRY_INTERVAL
                             // TODO: return expire time (handle it on the dapp)
-                            res.send('OK')
+                            res.send(JSON.stringify({ status: 'OK', signature: signature, authToken: authToken, sigMode: sigMode, expiryTime: expiryTime }))
                             return
                         }
                     })
