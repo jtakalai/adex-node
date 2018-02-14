@@ -74,9 +74,9 @@ function registerEndpoint() {
     });
 }
 
-function submitEntry(payload, signature, response) {
+function submitEntry(payload, response) {
     redisClient.zadd(['bid:' + payload.bid, Date.parse(payload.time),
-    JSON.stringify({ 'type': payload.type, 'uid': payload.uid, 'adunit': payload.adunit, 'address':  payload.address, ' signature' : signature})],
+    JSON.stringify({ 'type': payload.type, 'uid': payload.uid, 'adunit': payload.adunit, 'address':  payload.address, ' signature' : payload.signature})],
     (err, result) => {
         if (err) {
             console.log('[zadd] Add entry failed (' + result + ') ' + err);
@@ -103,11 +103,10 @@ function submitEntry(payload, signature, response) {
 }
 
 router.post('/submit', function (request, response) {
-    var signature = request.query.signature;
     var payload = JSON.parse(request.query.data);
 
     //console.log('Public key len is ' + publicKey + ', signature is ' + request.query.signature + ' data is ' + request.query.data);
-    submitEntry(payload, signature, response);
+    submitEntry(payload, response);
 });
 
 module.exports = router;

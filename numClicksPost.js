@@ -34,7 +34,7 @@ var timer = null;
 
 console.log('count is ' + count);
 
-var authToken = '1973182316781013';
+var authToken = '1537340846634059';
 var signature = '';
 console.log(privateKeyHex);
 var privateKey = Buffer.from(privateKeyHex, 'hex')
@@ -63,7 +63,7 @@ function submitRequest(which) {
 	var options = {
 	    host: servername,
 	    port: serverport,
-		path: '/submit?signature=' + signature + '&data=' + JSON.stringify(data[which]),
+		path: '/submit?data=' + JSON.stringify(data[which]),
 		method: 'POST',
 		headers: {
 			'X-User-Signature': sessionSignature,
