@@ -92,7 +92,7 @@ class Bids {
         return this.getBids(query)
     }
 
-    getSlotBids({ user, adSlot }) {
+    getSlotBids({ user, adSlotId }) {
         let query = {
             _publisher: user,
             _adSlotId: ObjectId(adSlotId)
