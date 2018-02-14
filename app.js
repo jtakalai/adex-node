@@ -54,7 +54,7 @@ const initApp = () => {
 					res.status(500).send('Internal error');
 				}
 				if (reply) {
-					console.log('reply:', reply.toString())
+					// console.log('reply:', reply.toString())
 					req.user = (JSON.parse(reply)).user.toString()
 					return next()
 				} else {
@@ -72,9 +72,9 @@ const initApp = () => {
 	})
 
 	// Not used in adexview and collector this branch
-	// app.use('/', require('./routes/adex-collector/collector'))
-	// app.use('/', require('./routes/adex-view/adex-view'))
 	app.use('/', require('./routes/auth/auth'))
+	// app.use('/', signatureCheck, require('./routes/adex-collector/collector'))
+	// app.use('/', signatureCheck, require('./routes/adex-view/adex-view'))
 	app.use('/', signatureCheck, require('./routes/registry/items'))
 	app.use('/', signatureCheck, require('./routes/registry/exchange'))
 }
