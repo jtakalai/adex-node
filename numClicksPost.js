@@ -4,27 +4,28 @@
 var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var http = require('http');
-var nacl = require('tweetnacl');
-nacl.util = require('tweetnacl-util');
+var sigUtil = require('eth-sig-util');
 
 var fileName = argv._[0];
 if (fileName === undefined) {
 	console.log('usage: ./numClicksPost <sample-data-file>' +
 		' --server=<server-name>' +
 		' --port=<server-port>' +
-		' --privateKey=<keyfile>');
+		' --privateKey=<key>' +
+		' --address=');
 	process.exit(1);
 }
 
-var privateKeyFile = './private.key';
+var privateKeyHex = 'e466e969c24e46406a6b8bb08eebefaae67b92646dc4b8c9fa59f04e42c8ebd2';
 var servername = 'localhost';
-var serverport = 8080;
+var serverport = 9710;
+var address = '0x5f0ae333f96b33def7db653adec168ebb74dbe00';
 if (argv.server) servername = argv.server;
 if (argv.port) serverport = argv.port;
-if (argv.privateKey) privateKeyFile = argv.privateKey;
+if (argv.privateKey) privateKeyHex = argv.privateKey;
+if (argv.address) address = argv.address;
 
 var data = JSON.parse(fs.readFileSync(fileName, 'utf8'));
-var privateKey = fs.readFileSync(privateKeyFile, 'utf8');
 
 console.log("Start");
 var whenStart = Date.now();
@@ -33,18 +34,39 @@ var timer = null;
 
 console.log('count is ' + count);
 
+var authToken = '1537340846634059';
+var signature = '';
+console.log(privateKeyHex);
+var privateKey = Buffer.from(privateKeyHex, 'hex')
+var sessionSignature = prepareSessionSignature(privateKey, authToken)
+
+console.log(sessionSignature);
+
+function prepareSessionSignature(privKey, authToken) {
+	var typed = [  { type: 'uint', name: 'Auth token', value: authToken} ]
+	var msgParams = { data: typed }
+	var signature = sigUtil.signTypedData(privKey, msgParams)
+
+	return signature;
+}
+
 function submitRequest(which) {
-	var keyPair = nacl.sign.keyPair.fromSecretKey(nacl.util.decodeBase64(privateKey));
 	var message = JSON.stringify(data[which]);
-	var signature = nacl.sign.detached(nacl.util.decodeUTF8(message), keyPair.secretKey);
+	data[which].address = address;
+	var dataToSign = [  { type: 'string', name: 'Event', value: JSON.stringify(data[which]) }];
+	var msgParams = { data: dataToSign }
+	var signature = sigUtil.signTypedData(privateKey, msgParams);
+	data[which].signature = signature;
+
+	console.log(data[which]);
 
 	var options = {
 	    host: servername,
 	    port: serverport,
-		path: '/submit?signature=' + encodeURIComponent(nacl.util.encodeBase64(signature)) + '&data=' + JSON.stringify(data[which]),
+		path: '/submit?data=' + JSON.stringify(data[which]),
 		method: 'POST',
 		headers: {
-			'X-public-key': nacl.util.encodeBase64(keyPair.publicKey),
+			'X-User-Signature': sessionSignature,
 		}
 	};
 	var request = http.request(options, function(result) {	

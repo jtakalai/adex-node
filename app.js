@@ -54,7 +54,7 @@ const initApp = () => {
 					res.status(500).send('Internal error');
 				}
 				if (reply) {
-					console.log('reply:', reply.toString())
+					// console.log('reply:', reply.toString())
 					req.user = (JSON.parse(reply)).user.toString()
 					return next()
 				} else {

@@ -4,9 +4,6 @@ const express = require('express');
 var router = express.Router();
 const redis = require('redis');
 const scripto = require('redis-scripto');
-const nacl = require('tweetnacl');
-nacl.util = require('tweetnacl-util');
-const ed25519 = require('ed25519');
 
 var redisClient = require('./../../redisInit')
 
@@ -79,7 +76,8 @@ function registerEndpoint() {
 
 function submitEntry(payload, response) {
     redisClient.zadd(['bid:' + payload.bid, Date.parse(payload.time),
-    'type:'+ payload.type + ' uid:' + payload.uid + ' adunit:' + payload.adunit], (err, result) => {
+    JSON.stringify({ 'type': payload.type, 'uid': payload.uid, 'adunit': payload.adunit, 'address':  payload.address, ' signature' : payload.signature})],
+    (err, result) => {
         if (err) {
             console.log('[zadd] Add entry failed (' + result + ') ' + err);
         }
@@ -105,21 +103,10 @@ function submitEntry(payload, response) {
 }
 
 router.post('/submit', function (request, response) {
-    var whenStart = Date.now();
-    var publicKey = request.get('X-public-key');
-    var signature = nacl.util.decodeBase64(request.query.signature);
     var payload = JSON.parse(request.query.data);
 
     //console.log('Public key len is ' + publicKey + ', signature is ' + request.query.signature + ' data is ' + request.query.data);
-
-    if (ed25519.Verify(new Buffer(request.query.data), signature, nacl.util.decodeBase64(publicKey))) {
-        var whenEnd = Date.now();
-        // console.log('submit signature verification took ' + (whenEnd - whenStart) + ' milliseconds;');
-        submitEntry(payload, response);
-    } else {
-        console.log('Received invalid signature');
-        response.sendStatus(400);
-    }
+    submitEntry(payload, response);
 });
 
 module.exports = router;

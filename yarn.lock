@@ -9,9 +9,11 @@ accepts@~1.3.4:
     mime-types "~2.1.16"
     negotiator "0.6.1"
 
-"adex-constants@git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a":
+"adex-constants@git+https://git@github.com/AdExBlockchain/adex-constants.git#880d522940d502b5e99267dfb9368bebe1e4de9c":
   version "1.0.0"
-  resolved "git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a"
+  resolved "git+https://git@github.com/AdExBlockchain/adex-constants.git#880d522940d502b5e99267dfb9368bebe1e4de9c"
+  dependencies:
+    country-data "^0.0.31"
 
 "adex-constants@git+https://git@github.com/AdExBlockchain/adex-constants.git#c5b73cae61f4ca0dd96f81fbffa67019aa100a16":
   version "1.0.0"
@@ -19,11 +21,11 @@ accepts@~1.3.4:
   dependencies:
     country-data "^0.0.31"
 
-"adex-models@git+https://git@github.com/AdExBlockchain/adex-models.git#c31c7ff71b050e969b7b673dde86030a5308666f":
+"adex-models@git+https://git@github.com/AdExBlockchain/adex-models.git#6c0d7f6380ce652dd1d9c17ca29e7ac47836e6f7":
   version "1.0.0"
-  resolved "git+https://git@github.com/AdExBlockchain/adex-models.git#c31c7ff71b050e969b7b673dde86030a5308666f"
+  resolved "git+https://git@github.com/AdExBlockchain/adex-models.git#6c0d7f6380ce652dd1d9c17ca29e7ac47836e6f7"
   dependencies:
-    adex-constants "git+https://git@github.com/AdExBlockchain/adex-constants.git#342db0a3523c80f0c9764d5ea967a8e388b5341a"
+    adex-constants "git+https://git@github.com/AdExBlockchain/adex-constants.git#c5b73cae61f4ca0dd96f81fbffa67019aa100a16"
     bs58 "^4.0.1"
 
 ajv@^5.1.0:
@@ -2009,22 +2011,9 @@ scryptsy@^1.2.1:
   dependencies:
     pbkdf2 "^3.0.3"
 
-secp256k1@^3.0.1:
+secp256k1@^3.0.1, secp256k1@^3.3.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/secp256k1/-/secp256k1-3.5.0.tgz#677d3b8a8e04e1a5fa381a1ae437c54207b738d0"
-  dependencies:
-    bindings "^1.2.1"
-    bip66 "^1.1.3"
-    bn.js "^4.11.3"
-    create-hash "^1.1.2"
-    drbg.js "^1.0.1"
-    elliptic "^6.2.3"
-    nan "^2.2.1"
-    safe-buffer "^5.1.0"
-
-secp256k1@^3.3.0:
-  version "3.4.0"
-  resolved "https://registry.yarnpkg.com/secp256k1/-/secp256k1-3.4.0.tgz#1c905b256fa4ae5b9cc170e672dd59b4c5de46a4"
   dependencies:
     bindings "^1.2.1"
     bip66 "^1.1.3"
