@@ -101,10 +101,25 @@ class Bids {
         return this.getBids(query)
     }
 
-    getBids(query) {
+    getActiveBidsAdUnitsForSlot({ adSlotId }) {
+        let query = {
+            // _state: _state = constants.exchange.BID_STATES.Accepted.id,
+            // _adSlotId: ObjectId(adSlotId),
+            _adSlotId: { $ne: null }
+        }
+
+        let project = {
+            _adUnitId: 1
+        }
+
+        return this.getBids(query, project)
+    }
+
+    getBids(query, project = {}) {
         return new Promise((resolve, reject) => {
             bidsCollection
                 .find(query)
+                .project(project)
                 .toArray((err, result) => {
                     if (err) {
                         console.log('getBids err', err)

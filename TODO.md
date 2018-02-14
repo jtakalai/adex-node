@@ -1,0 +1,2 @@
+- send transaction hash on bid accept and/or listen web3 for bid states changes (accept, cancel, etc.)
+- when above ready fix active bids query

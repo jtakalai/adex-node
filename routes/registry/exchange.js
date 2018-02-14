@@ -41,7 +41,7 @@ router.get('/bids', (req, res) => {
 
     action
         .then((dbBid) => {
-            console.log('db getBids', dbBid)
+            // console.log('db getBids', dbBid)
             res.send(dbBid)
         })
         .catch((err) => {
