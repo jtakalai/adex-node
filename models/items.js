@@ -27,7 +27,7 @@ class Items {
                     return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, ipfs: itemIpfs, createdOn: createdOn })
                 })
         } else {
-            return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, ipfs: itemIpfs, createdOn: createdOn })
+            return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, createdOn: createdOn })
         }
     }
 
