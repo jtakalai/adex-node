@@ -51,7 +51,7 @@ const initApp = () => {
 
 				if (err) {
 					console.log('redis err', err)
-					res.status(500).send('Internal error');
+					res.status(500).send({ error: 'Internal error' });
 				}
 				if (reply) {
 					// console.log('reply:', reply.toString())
@@ -59,13 +59,13 @@ const initApp = () => {
 					return next()
 				} else {
 					// return next()
-					res.status(401).send('Authentication failed');
+					res.status(401).send({ error: 'Authentication failed' });
 				}
 			})
 		} else {
 			console.log('X-User-Signature header missing');
 			// return next()		
-			res.status(403).send('Authentication required');
+			res.status(403).send({ error: 'Authentication required' });
 		}
 	})
 
