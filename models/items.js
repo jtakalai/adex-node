@@ -180,21 +180,30 @@ class Items {
 
     // TODO: make common function to call to db and make the methods just to set the query
     getItemsByIds({ ids }) {
+        let items = {}
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType('items')
                 .find({
                     _id: { $in: ids }
                 })
                 .project({
-                    _meta: 1
+                    _meta: 1,
+                    _ipfs: 1
                 })
-                .toArray((err, items) => {
-                    if (err) {
-                        return reject(err)
-                    }
+                .forEach(
+                    (item) => {
+                        //TODO: maybe we should use _ipfs
+                        items[item._id] = item
+                    },
+                    (err, res) => {
+                        if (err) {
+                            console.log('getItemsByIds err', err)
+                            return reject([])
+                        }
 
-                    return resolve(items)
-                })
+                        return resolve(items)
+                    }
+                )
         })
 
     }

@@ -103,13 +103,20 @@ class Bids {
 
     getActiveBidsAdUnitsForSlot({ adSlotId }) {
         let query = {
+            //NOTE: the query when everything works
             // _state: _state = constants.exchange.BID_STATES.Accepted.id,
             // _adSlotId: ObjectId(adSlotId),
-            _adSlotId: { $ne: null }
+            // { $expr: { $lt: [ "$clicksCount" , "$_target" ] } } 
+
+            //TEMP query
+            _adSlotId: { $ne: null },
+            _contractId: { $ne: null },
         }
 
         let project = {
-            _adUnitId: 1
+            _adUnit: 1, // ipfs
+            _adUnitId: 1,
+            _contractId: 1
         }
 
         return this.getBids(query, project)
@@ -122,7 +129,7 @@ class Bids {
                 .project(project)
                 .toArray((err, result) => {
                     if (err) {
-                        console.log('getBids err', err)
+                        // console.log('getBids err', err)
                         return reject(err)
                     }
 
