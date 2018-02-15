@@ -6,6 +6,11 @@ const redis = require('redis');
 const scripto = require('redis-scripto');
 
 var redisClient = require('./../../redisInit')
+const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
+let { SIGN_TYPES } = require('adex-constants').exchange
+
+
+var bidModel = require('./../../models/bids')
 
 const pid = process.pid;
 
@@ -76,13 +81,17 @@ function registerEndpoint() {
 
 function submitEntry(payload, response) {
     redisClient.zadd(['bid:' + payload.bid, Date.parse(payload.time),
-    JSON.stringify({ 'type': payload.type, 'uid': payload.uid, 'adunit': payload.adunit, 'address':  payload.address, ' signature' : payload.signature})],
-    (err, result) => {
+    JSON.stringify({ 'type': payload.type, 'uid': payload.uid, 'adunit': payload.adunit, 'address':  payload.address,
+     ' signature' : payload.signature, 'sigMode' : payload.sigMode})],(err, result) => {
         if (err) {
             console.log('[zadd] Add entry failed (' + result + ') ' + err);
         }
         response.redirect('/');
     });
+    if (payload.type === 'click') {
+        submitClick(payload);
+    }
+
     var timeInterval = Math.floor(Date.parse(payload.time) / (60 * MSECS_IN_SEC));
     redisClient.hincrby(['time:' + payload.bid + ':' + payload.type, timeInterval, 1], (err, result) => {
         if (err) {
@@ -100,6 +109,53 @@ function submitEntry(payload, response) {
             }
         }
     });
+}
+
+function submitClick(payload)
+{
+        // special handling for clicks - verify signature and send to Mongo
+        var signature = payload.signature;
+        var sigMode = payload.sigMode;
+        delete payload.signature;
+        delete payload.sigMode;
+        console.log('Click signature is ' + signature + ' mode ' + sigMode);
+        console.log(payload);
+
+        var signedData = [  { type: 'string', name: 'Event', value: JSON.stringify(payload) }];
+        var msgParams = { data: signedData }
+        var authRes;
+
+        switch (sigMode) {
+
+            case SIGN_TYPES.EthPersonal.id:
+                authRes = getAddrFromPersonalSignedMsg({ signature: signature, msg: msgParams });
+                break
+            case SIGN_TYPES.Eip.id:
+                // Auth Metamask
+                //TEMP
+                authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: signedData });
+                break
+            case SIGN_TYPES.Trezor.id:
+                // Auth Trezor
+                break
+            default:
+                break
+        }
+
+        if (!!authRes.then) {
+            authRes
+            .then((recoveredAddr) => {
+                console.log(authRes);
+                console.log(recoveredAddr);
+                if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
+                    console.log('Successfully verified signature, writing to MongoDB');
+                    bidModel.addClicksToBid({id: payload.bid});
+                }
+            })
+            .catch((err) => {
+                console.log('Error verifying signature ' + err);
+            });
+        }
 }
 
 router.post('/submit', function (request, response) {
