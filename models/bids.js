@@ -144,6 +144,13 @@ class Bids {
                 .update({ _contractId: id },
                     {
                         $inc: { clicksCount: clicks }
+                    }, (err, res) => {
+                        if (err) {
+                            console.log('addClicksToBid err', err)
+                            return reject(err)
+                        }
+
+                        resolve(res.result)
                     })
         })
     }

@@ -43,9 +43,9 @@ function registerEndpoint() {
                 // console.log('Zcard request took ' + (whenEnd - whenStart) + ' milliseconds');
             });
         } else if (request.query.interval !== undefined) {
-            redisClient.multi([['hget', 'time:' + bid +':click', request.query.interval],
-                ['hget', 'time:' + bid + ':impression', request.query.interval],
-                ['hget', 'time:' + bid + ':leave', request.query.interval]
+            redisClient.multi([['hget', 'time:' + bid + ':click', request.query.interval],
+            ['hget', 'time:' + bid + ':impression', request.query.interval],
+            ['hget', 'time:' + bid + ':leave', request.query.interval]
             ]).exec(function (err, replies) {
                 var whenEnd = Date.now();
                 var results = {
@@ -80,26 +80,34 @@ function registerEndpoint() {
 }
 
 function submitEntry(payload, response) {
-    redisClient.zadd(['bid:' + payload.bid, Date.parse(payload.time),
-    JSON.stringify({ 'type': payload.type, 'uid': payload.uid, 'adunit': payload.adunit, 'address':  payload.address,
-     ' signature' : payload.signature, 'sigMode' : payload.sigMode})],(err, result) => {
+    redisClient.zadd(['bid:' + payload.bid, payload.time,
+    JSON.stringify({
+        'type': payload.type,
+        'adunit': payload.adunit,
+        'address': payload.address,
+        'signature': payload.signature,
+        'sigMode': payload.sigMode
+    })], (err, result) => {
         if (err) {
-            console.log('[zadd] Add entry failed (' + result + ') ' + err);
+            console.log('[zadd] Add entry failed (' + result + ') ' + err)
+            response.status(500).send({ error: '[zadd] Add entry failed (' + result + ') ' + err })
         }
-        response.redirect('/');
-    });
+
+        response.send(JSON.stringify({ updated: result }))
+    })
+
     if (payload.type === 'click') {
         submitClick(payload);
     }
 
-    var timeInterval = Math.floor(Date.parse(payload.time) / (60 * MSECS_IN_SEC));
+    var timeInterval = Math.floor(payload.time / (60 * MSECS_IN_SEC));
     redisClient.hincrby(['time:' + payload.bid + ':' + payload.type, timeInterval, 1], (err, result) => {
         if (err) {
             console.log('[HINCRBY] Add entry failed (' + timeInterval + ') ' + err);
         } else {
             if (result < 2) {
                 var date = new Date();
-                var expiryTime = (timeInterval + 1 ) * 60 * MSECS_IN_SEC +
+                var expiryTime = (timeInterval + 1) * 60 * MSECS_IN_SEC +
                     EXPIRY_INTERVAL * MSECS_IN_SEC - date.getTime();
                 var expirySeconds = Math.floor(expiryTime / 1000);
                 redisClient.expire(['time:' + payload.bid + ':' + payload.type, expirySeconds], (err, res) => {
@@ -111,55 +119,77 @@ function submitEntry(payload, response) {
     });
 }
 
-function submitClick(payload)
-{
-        // special handling for clicks - verify signature and send to Mongo
-        var signature = payload.signature;
-        var sigMode = payload.sigMode;
-        delete payload.signature;
-        delete payload.sigMode;
-        console.log('Click signature is ' + signature + ' mode ' + sigMode);
-        console.log(payload);
+function submitClick(payload) {
+    // special handling for clicks - verify signature and send to Mongo
+    var signature = payload.signature
+    var sigMode = payload.sigMode
+    delete payload.signature
+    delete payload.sigMode
+    console.log('Click signature is ' + signature + ' mode ' + sigMode)
+    console.log('payload', payload)
 
-        var signedData = [  { type: 'string', name: 'Event', value: JSON.stringify(payload) }];
-        var msgParams = { data: signedData }
-        var authRes;
+    var signedData = [{ type: 'string', name: 'Event', value: JSON.stringify(payload) }]
+    var msgParams = { data: signedData }
+    var authRes;
 
-        switch (sigMode) {
+    switch (sigMode) {
 
-            case SIGN_TYPES.EthPersonal.id:
-                authRes = getAddrFromPersonalSignedMsg({ signature: signature, msg: msgParams });
-                break
-            case SIGN_TYPES.Eip.id:
-                // Auth Metamask
-                //TEMP
-                authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: signedData });
-                break
-            case SIGN_TYPES.Trezor.id:
-                // Auth Trezor
-                break
-            default:
-                break
-        }
+        case SIGN_TYPES.EthPersonal.id:
+            authRes = getAddrFromPersonalSignedMsg({ signature: signature, msg: JSON.stringify(payload) })
+            break
+        case SIGN_TYPES.Eip.id:
+            // Auth Metamask
+            //TEMP
+            authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: signedData })
+            break
+        case SIGN_TYPES.Trezor.id:
+            // Auth Trezor
+            break
+        default:
+            break
+    }
 
-        if (!!authRes.then) {
-            authRes
+    if (!!authRes.then) {
+        authRes
             .then((recoveredAddr) => {
                 console.log(authRes);
                 console.log(recoveredAddr);
                 if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
-                    console.log('Successfully verified signature, writing to MongoDB');
-                    bidModel.addClicksToBid({id: payload.bid});
+                    return bidModel.addClicksToBid({ id: payload.bid })
+                } else {
+                    throw 'No sig match'
                 }
             })
+            .then((res) => {
+                console.log('Successfully verified signature, writing to MongoDB', res);
+            })
             .catch((err) => {
-                console.log('Error verifying signature ' + err);
+                console.log('Error verifying signature ' + err)
             });
-        }
+    } else {
+        console.log('Error verifying signature - no sigMode')
+    }
 }
 
 router.post('/submit', function (request, response) {
-    var payload = JSON.parse(request.query.data);
+    let payload = {}
+    let body = request.body
+    if (request.query && request.query.data) {
+        //tests
+        payload = JSON.parse(request.query.data)
+    } else if (body.signature &&
+        body.sigMode !== undefined &&
+        body.type &&
+        body.address &&
+        body.adunit &&
+        body.bid
+    ) {
+        //adview
+        payload = request.body
+    }
+    else {
+        return response.status(404).send({ error: 'Invalid data' })
+    }
 
     //console.log('Public key len is ' + publicKey + ', signature is ' + request.query.signature + ' data is ' + request.query.data);
     submitEntry(payload, response);
