@@ -58,11 +58,13 @@ const initApp = () => {
 					req.user = (JSON.parse(reply)).user.toString()
 					return next()
 				} else {
+					// return next()
 					res.status(401).send('Authentication failed');
 				}
 			})
 		} else {
 			console.log('X-User-Signature header missing');
+			// return next()		
 			res.status(403).send('Authentication required');
 		}
 	})
@@ -72,9 +74,9 @@ const initApp = () => {
 	})
 
 	// Not used in adexview and collector this branch
+	// app.use('/', require('./routes/adex-collector/collector'))
 	app.use('/', require('./routes/auth/auth'))
-	// app.use('/', signatureCheck, require('./routes/adex-collector/collector'))
-	// app.use('/', signatureCheck, require('./routes/adex-view/adex-view'))
+	app.use('/', require('./routes/adex-view/adex-view'))
 	app.use('/', signatureCheck, require('./routes/registry/items'))
 	app.use('/', signatureCheck, require('./routes/registry/exchange'))
 }

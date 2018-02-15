@@ -65,21 +65,21 @@ class Items {
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
                 .findOneAndUpdate({ user: user, _id: ObjectId(id) },
-                {
-                    $set: {
-                        _deleted: true
-                    }
-                },
-                { returnNewDocument: true }
-                , (err, res) => {
-                    if (err) {
-                        console.log('flagItemDeleted', err)
-                        return reject(err)
-                    }
+                    {
+                        $set: {
+                            _deleted: true
+                        }
+                    },
+                    { returnNewDocument: true }
+                    , (err, res) => {
+                        if (err) {
+                            console.log('flagItemDeleted', err)
+                            return reject(err)
+                        }
 
-                    console.log(res)
-                    return resolve(res.value || {})
-                })
+                        console.log(res)
+                        return resolve(res.value || {})
+                    })
         })
     }
 
@@ -127,18 +127,18 @@ class Items {
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType('items')
                 .findOneAndUpdate(
-                { user: user, _id: ObjectId(item) },
-                dbAction,
-                { returnOriginal: false },
-                (err, res) => {
-                    if (err) {
-                        console.log('addItemToItem', err)
-                        return reject(err)
-                    }
+                    { user: user, _id: ObjectId(item) },
+                    dbAction,
+                    { returnOriginal: false },
+                    (err, res) => {
+                        if (err) {
+                            console.log('addItemToItem', err)
+                            return reject(err)
+                        }
 
-                    // console.log('addItemToItem', res.value)
-                    return resolve(res.value || {})
-                })
+                        // console.log('addItemToItem', res.value)
+                        return resolve(res.value || {})
+                    })
         })
     }
 
@@ -176,6 +176,27 @@ class Items {
                     return resolve(item)
                 })
         })
+    }
+
+    // TODO: make common function to call to db and make the methods just to set the query
+    getItemsByIds({ ids }) {
+        return new Promise((resolve, reject) => {
+            this.getCollectionByItemType('items')
+                .find({
+                    _id: { $in: ids }
+                })
+                .project({
+                    _meta: 1
+                })
+                .toArray((err, items) => {
+                    if (err) {
+                        return reject(err)
+                    }
+
+                    return resolve(items)
+                })
+        })
+
     }
 }
 
