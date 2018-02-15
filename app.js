@@ -74,9 +74,9 @@ const initApp = () => {
 	})
 
 	// Not used in adexview and collector this branch
-	// app.use('/', require('./routes/adex-collector/collector'))
 	app.use('/', require('./routes/auth/auth'))
-	app.use('/', require('./routes/adex-view/adex-view'))
+	app.use('/', signatureCheck, require('./routes/adex-collector/collector'))
+	app.use('/', signatureCheck, require('./routes/adex-view/adex-view'))
 	app.use('/', signatureCheck, require('./routes/registry/items'))
 	app.use('/', signatureCheck, require('./routes/registry/exchange'))
 }
