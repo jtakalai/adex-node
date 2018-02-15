@@ -130,6 +130,16 @@ class Bids {
                 })
         })
     }
+
+    addClicksToBid({ id, clicks = 1 }) {
+        return new Promise((resolve, reject) => {
+            bidsCollection
+                .update({ _contractId: id },
+                    {
+                        $inc: { clicksCount: clicks }
+                    })
+        })
+    }
 }
 
 module.exports = new Bids()
