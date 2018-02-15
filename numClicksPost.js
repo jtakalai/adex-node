@@ -50,6 +50,15 @@ function prepareSessionSignature(privKey, authToken) {
 	return signature;
 }
 
+/* Sample item
+    {
+        "time": "2018-02-13T11:56:44.211Z",
+        "type": "click",
+        "uid": 8,
+        "adunit": 43,
+        "bid": 42
+    }
+*/
 function submitRequest(which) {
 	var message = JSON.stringify(data[which]);
 	data[which].address = address;
@@ -57,6 +66,7 @@ function submitRequest(which) {
 	var msgParams = { data: dataToSign }
 	var signature = sigUtil.signTypedData(privateKey, msgParams);
 	data[which].signature = signature;
+	data[which].sigMode = 0;
 
 	console.log(data[which]);
 
