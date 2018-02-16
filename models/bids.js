@@ -34,20 +34,19 @@ class Bids {
                                 console.log('unit', unit)
                                 console.log('bidInst', bidInst)
 
-                                let createdOn = Date.now()
-                                console.log('createdOn', createdOn)
                                 bidInst.state = constants.exchange.BID_STATES.DoesNotExist.id
-                                bidInst.createdOn = createdOn
+                                bidInst.createdOn = Date.now() // bidInst.opened ?
                                 bidInst.adUnitId = ObjectId(bidInst.adUnitId)
                                 bidInst.advertiser = user
 
                                 //Db only
                                 bidInst.sizeAndType = unit.sizeAndType // index
 
-                                let dbBid = bidInst.plainObj()
+                                if (bidInst.id !== bidInst.signature.hash) {
+                                    return reject('Invalid bid hash (id)')
+                                }
 
-                                // NOTE: to be sure that mongo will give the id
-                                delete dbBid._id
+                                let dbBid = bidInst.plainObj()
 
                                 bidsCollection
                                     .insertOne(dbBid, (err, result) => {
@@ -109,14 +108,12 @@ class Bids {
             // { $expr: { $lt: [ "$clicksCount" , "$_target" ] } } 
 
             //TEMP query
-            _adSlotId: { $ne: null },
-            _contractId: { $ne: null },
+            _adSlotId: { $ne: null }
         }
 
         let project = {
             _adUnit: 1, // ipfs
-            _adUnitId: 1,
-            _contractId: 1
+            _adUnitId: 1
         }
 
         return this.getBids(query, project)
@@ -141,7 +138,7 @@ class Bids {
     addClicksToBid({ id, clicks = 1 }) {
         return new Promise((resolve, reject) => {
             bidsCollection
-                .update({ _contractId: id },
+                .update({ _id: id },
                     {
                         $inc: { clicksCount: clicks }
                     }, (err, res) => {

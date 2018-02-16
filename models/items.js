@@ -35,6 +35,7 @@ class Items {
         return new Promise((resolve, reject) => {
             let sizeAndType = Item.sizeAndType({ adType: meta.adType, size: meta.size })
 
+            //TODO: new item from Item model instance
             let dbItem = {
                 type: item._type, //unit / slot 
                 user: user,
