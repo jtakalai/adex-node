@@ -133,8 +133,6 @@ function submitClick(payload) {
     var sigMode = payload.sigMode
     delete payload.signature
     delete payload.sigMode
-    console.log('Click signature is ' + signature + ' mode ' + sigMode)
-    console.log('payload', payload)
 
     var signedData = [{ type: 'string', name: 'Event', value: JSON.stringify(payload) }]
     var msgParams = { data: signedData }
@@ -163,7 +161,16 @@ function submitClick(payload) {
                 console.log(authRes);
                 console.log(recoveredAddr);
                 if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
-                    return bidModel.addClicksToBid({ id: payload.bid })
+                    /* Additional entry in redis */
+                    redisClient.hset(['bid:' + payload.bid + ':users', payload.address, payload.time], (err, result) => {
+                        if (err) {
+                            console.log('[HSET] Add user entry failed failed ' + err);
+                        }
+                        if (result > 0)
+                            return bidModel.addClicksToBid({ id: payload.bid });
+                        else
+                            console.log('Click event from ' + payload.address + ' already in DB');
+                    })
                 } else {
                     throw 'No sig match'
                 }
