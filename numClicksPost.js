@@ -34,7 +34,7 @@ var timer = null;
 
 console.log('count is ' + count);
 
-var authToken = '5821593231639345';
+var authToken = '5529476812651869';
 var signature = '';
 console.log(privateKeyHex);
 var privateKey = Buffer.from(privateKeyHex, 'hex')
@@ -71,8 +71,7 @@ function submitRequest(which) {
 	data[which].signature = signature;
 	data[which].sigMode = 0;
 
-	console.log(data[which]);
-
+	var body = JSON.stringify(data[which])
 	var options = {
 	    host: servername,
 	    port: serverport,
@@ -80,11 +79,13 @@ function submitRequest(which) {
 		method: 'POST',
 		headers: {
 			'X-User-Signature': sessionSignature,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(data[which])
+			'Content-Type': 'application/json',
+			'Content-Length': body.length
+		}
 	};
-	var request = http.request(options, function(result) {	
+	console.log(options.body)
+	var request = http.request(options, function(result) {
+		console.log(request)
 		result.on('data', function() {
 			responses += 1;
 			processed++;
@@ -100,7 +101,7 @@ function submitRequest(which) {
 			processed++;
 		});
 	});
-	// console.log('Submited data (' + which + ') ' + JSON.stringify(data[which]));
+	request.write(body);
 	request.end();
 }
 
