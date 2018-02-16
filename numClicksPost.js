@@ -16,10 +16,10 @@ if (fileName === undefined) {
 	process.exit(1);
 }
 
-var privateKeyHex = 'e466e969c24e46406a6b8bb08eebefaae67b92646dc4b8c9fa59f04e42c8ebd2';
+var privateKeyHex = '115bf6cba62647bb6bea5b5be252ff1ac04ab359a1e614dbb1f8055792b7fe8b';
 var servername = 'localhost';
 var serverport = 9710;
-var address = '0x5f0ae333f96b33def7db653adec168ebb74dbe00';
+var address = '0x28772520c5336134e2d2a5fb329ea23ae310f3da';
 if (argv.server) servername = argv.server;
 if (argv.port) serverport = argv.port;
 if (argv.privateKey) privateKeyHex = argv.privateKey;
@@ -34,7 +34,7 @@ var timer = null;
 
 console.log('count is ' + count);
 
-var authToken = '1537340846634059';
+var authToken = '5529476812651869';
 var signature = '';
 console.log(privateKeyHex);
 var privateKey = Buffer.from(privateKeyHex, 'hex')
@@ -54,32 +54,38 @@ function prepareSessionSignature(privKey, authToken) {
     {
         "time": "2018-02-13T11:56:44.211Z",
         "type": "click",
-        "uid": 8,
         "adunit": 43,
-        "bid": 42
+        "bid": 42,
+	"address" : "0x5f0ae333f96b33def7db653adec168ebb74dbe00"
     }
 */
 function submitRequest(which) {
 	var message = JSON.stringify(data[which]);
+	delete data[which].uid;
 	data[which].address = address;
+	var timestamp = Date.parse(data[which].time);
+	data[which].time = timestamp;
 	var dataToSign = [  { type: 'string', name: 'Event', value: JSON.stringify(data[which]) }];
 	var msgParams = { data: dataToSign }
 	var signature = sigUtil.signTypedData(privateKey, msgParams);
 	data[which].signature = signature;
 	data[which].sigMode = 0;
 
-	console.log(data[which]);
-
+	var body = JSON.stringify(data[which])
 	var options = {
 	    host: servername,
 	    port: serverport,
-		path: '/submit?data=' + JSON.stringify(data[which]),
+		path: '/submit',
 		method: 'POST',
 		headers: {
 			'X-User-Signature': sessionSignature,
+			'Content-Type': 'application/json',
+			'Content-Length': body.length
 		}
 	};
-	var request = http.request(options, function(result) {	
+	console.log(options.body)
+	var request = http.request(options, function(result) {
+		console.log(request)
 		result.on('data', function() {
 			responses += 1;
 			processed++;
@@ -95,7 +101,7 @@ function submitRequest(which) {
 			processed++;
 		});
 	});
-	// console.log('Submited data (' + which + ') ' + JSON.stringify(data[which]));
+	request.write(body);
 	request.end();
 }
 

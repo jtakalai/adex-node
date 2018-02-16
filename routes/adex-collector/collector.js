@@ -31,7 +31,15 @@ function registerEndpoint() {
     console.log('[' + pid + '] ' + 'Register endpoint /events');
     router.get('/events', function (request, response) {
         var whenStart = Date.now();
-        var bid = JSON.parse(request.query.bid);
+        var bid = {};
+
+        try {
+            bid = JSON.parse(request.query.bid);
+        } catch (err) {
+            response.status(400).send({ error: 'Invalid bid id' });
+            return
+        }
+
         // console.log('Received endpoint request, data ' + endpoints[which] +
         // ' start at ' + request.query.start + ' end at ' + request.query.end);
         if (request.query.start === undefined && request.query.end === undefined && request.query.interval == undefined) {
@@ -103,7 +111,7 @@ function submitEntry(payload, response) {
     var timeInterval = Math.floor(payload.time / (60 * MSECS_IN_SEC));
     redisClient.hincrby(['time:' + payload.bid + ':' + payload.type, timeInterval, 1], (err, result) => {
         if (err) {
-            console.log('[HINCRBY] Add entry failed (' + timeInterval + ') ' + err);
+            console.log('[HINCRBY] Add entry timestamp failed (' + timeInterval + ') ' + err);
         } else {
             if (result < 2) {
                 var date = new Date();
@@ -125,8 +133,6 @@ function submitClick(payload) {
     var sigMode = payload.sigMode
     delete payload.signature
     delete payload.sigMode
-    console.log('Click signature is ' + signature + ' mode ' + sigMode)
-    console.log('payload', payload)
 
     var signedData = [{ type: 'string', name: 'Event', value: JSON.stringify(payload) }]
     var msgParams = { data: signedData }
@@ -155,7 +161,16 @@ function submitClick(payload) {
                 console.log(authRes);
                 console.log(recoveredAddr);
                 if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
-                    return bidModel.addClicksToBid({ id: payload.bid })
+                    /* Additional entry in redis */
+                    redisClient.hset(['bid:' + payload.bid + ':users', payload.address, payload.time], (err, result) => {
+                        if (err) {
+                            console.log('[HSET] Add user entry failed failed ' + err);
+                        }
+                        if (result > 0)
+                            return bidModel.addClicksToBid({ id: payload.bid });
+                        else
+                            console.log('Click event from ' + payload.address + ' already in DB');
+                    })
                 } else {
                     throw 'No sig match'
                 }
@@ -173,11 +188,8 @@ function submitClick(payload) {
 
 router.post('/submit', function (request, response) {
     let payload = {}
-    let body = request.body
-    if (request.query && request.query.data) {
-        //tests
-        payload = JSON.parse(request.query.data)
-    } else if (body.signature &&
+    let body = request.body || {}
+    if (body.signature &&
         body.sigMode !== undefined &&
         body.type &&
         body.address &&

@@ -10,7 +10,7 @@ redisClient.on('ready', function () {
     console.log('Redis is ready')
 })
 
-redisClient.on('error', function () {
+redisClient.on('error', function (err) {
     console.log("Error connecting to Redis: " + err);
     process.exit(1)
 })
