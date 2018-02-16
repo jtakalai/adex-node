@@ -55,8 +55,13 @@ const initApp = () => {
 				}
 				if (reply) {
 					// console.log('reply:', reply.toString())
-					req.user = (JSON.parse(reply)).user.toString()
-					return next()
+					try {
+						req.user = (JSON.parse(reply)).user.toString()
+						return next()
+					} catch (err) {
+						console.log('Redis error: Unable to verify user signature')
+						res.status(401).send({ error: 'Internal error verifying user signature' });
+					}
 				} else {
 					// return next()
 					res.status(401).send({ error: 'Authentication failed' });
