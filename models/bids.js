@@ -49,6 +49,11 @@ class Bids {
 
                                 let dbBid = bidInst.plainObj()
 
+                                //Only db props (not neede in the modedl yet)
+                                dbBid.unconfirmedStateId = BID_STATES.DoesNotExist.id
+                                dbBid.unconfirmedStateTrHash = null
+                                dbBid.unconfirmedStateTime = 0 // TODO: set some timeout for confirmation
+
                                 bidsCollection
                                     .insertOne(dbBid, (err, result) => {
                                         if (err) {
@@ -86,7 +91,9 @@ class Bids {
             sizeAndType: parseInt(sizeAndType),
             _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
-            _advertiser: { $ne: user } // TODO: keep all addresses in lower case
+            _advertiser: { $ne: user }, // TODO: keep all addresses in lower case
+            unconfirmedStateId: BID_STATES.Accepted.id
+            // TODO: Maybe some timeout from  unconfirmedStateTime
         }
 
         return this.getBids(query)
@@ -101,12 +108,13 @@ class Bids {
         return this.getBids(query)
     }
 
+    // Bids for adslot adview (iframe)
     getActiveBidsAdUnitsForSlot({ adSlotId }) {
         let query = {
             //NOTE: the query when everything works
-            // _state: _state = BID_STATES.Accepted.id,
+            // _state: BID_STATES.Accepted.id,
             // _adSlotId: ObjectId(adSlotId),
-            // { $expr: { $lt: [ "$clicksCount" , "$_target" ] } } 
+            // $expr: { $lt: ["$clicksCount", "$_target"] },
 
             //TEMP query
             _adSlotId: { $ne: null }
