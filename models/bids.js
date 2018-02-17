@@ -170,8 +170,11 @@ class Bids {
 
         console.log('query', query)
         let update = {
-            unconfirmedStateId: state, 
-            unconfirmedStateTrHash: trHash, 
+            $set: {
+                unconfirmedStateId: state,
+                unconfirmedStateTrHash: trHash,
+                unconfirmedStateTime: Date.now() // TODO: set some timeout for confirmation
+            }
         }
 
         return this.updateBid({ query: query, update: update })
@@ -181,7 +184,7 @@ class Bids {
     updateBid({ query, update }) {
         return new Promise((resolve, reject) => {
             bidsCollection
-                .update(query,
+                .updateOne(query,
                     update, (err, res) => {
                         if (err) {
                             console.log('addClicksToBid err', err)

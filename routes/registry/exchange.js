@@ -26,7 +26,7 @@ router.post('/bids', (req, res) => {
 
 router.get('/bids', (req, res) => {
     let bid = req.body
-    let query = req.query    
+    let query = req.query
     let user = req.user
     let action = null
 
@@ -43,6 +43,21 @@ router.get('/bids', (req, res) => {
         .then((dbBid) => {
             // console.log('db getBids', dbBid)
             res.send(dbBid)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(500).send(err)
+        })
+})
+
+router.post('/bid-state', (req, res) => {
+    let bid = req.body
+    let query = req.query
+
+    Bids.addUnconfirmedState({ bidId: query.bidId, state: query.state, trHash: query.trHash, user: req.user })
+        .then((result) => {
+            console.log('db addUnconfirmedState', result)
+            res.send(result)
         })
         .catch((err) => {
             console.log(err)
