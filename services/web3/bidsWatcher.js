@@ -3,6 +3,7 @@ const { helpers } = require('adex-models')
 const { web3, cfg, token, exchange, web3Utils } = require('./ADX')
 const redisClient = require('./../../redisInit')
 const { BID_STATES, BidStatesEventNames } = constants.exchange
+const Bids = require('./../../models/bids')
 
 const LAST_BLOCK_KEY = 'lastEthBlockSynced'
 
@@ -72,6 +73,7 @@ function init() {
 // TODO: move this functions to the bids
 function mapLogBidAccepted(ev) {
     let returnValues = ev.returnValues
+
     return {
         updateOne: {
             filter: { _id: returnValues.bidId },
@@ -82,9 +84,8 @@ function mapLogBidAccepted(ev) {
                     _acceptedTime: parseInt(returnValues.acceptedTime, 10),
                     _state: BID_STATES.Accepted.id
                 },
-                //TODO: Do we need this data in the db and if we need it, what part of it. Temp push the ev.transactionHash
                 $push: {
-                    confirmedEvents: ev.transactionHash
+                    confirmedEvents: ev
                 }
             }
         }
@@ -125,14 +126,24 @@ function mapEventToDbOperations(ev) {
 function updateDbBids(events = []) {
     return new Promise((resolve, reject) => {
         let bulkWriteEvents = events.map((ev) => {
-            return mapEventToDbOperations(ev)
+            delete ev.raw
+            delete ev.signature
+            delete ev.blockHash
+            delete ev.returnValues[0]
+            delete ev.returnValues[1]
+            delete ev.returnValues[2]
+            delete ev.returnValues[3]
+            delete ev.returnValues[4]
+            delete ev.returnValues[5]
+
+            return mapEventToDbOperations({ ...ev })
 
         })
 
         console.log('bulkWriteEvents', bulkWriteEvents)
 
         //TODO: fix mongo db init in order to use it here 
-        return resolve(bulkWriteEvents)
+        return resolve(Bids.bulkWriteBids(bulkWriteEvents))
     })
 }
 

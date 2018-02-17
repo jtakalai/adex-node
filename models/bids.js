@@ -214,7 +214,7 @@ class Bids {
                         return reject(err)
                     }
 
-                    console.log('bulkWriteBids res', res)
+                    // console.log('bulkWriteBids res', res)
 
                     resolve(res.result)
                 })
