@@ -205,8 +205,12 @@ class Bids {
         })
     }
 
-    bulkWriteBids(bulk) {
+    bulkWriteBids(bulk = []) {
         return new Promise((resolve, reject) => {
+            if (!bulk.length) {
+                return resolve('bulkWriteBids nothing to update')
+            }
+
             bidsCollection
                 .bulkWrite(bulk, (err, res) => {
                     if (err) {

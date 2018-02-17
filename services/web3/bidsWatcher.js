@@ -12,7 +12,7 @@ const LAST_BLOCK_KEY = 'lastEthBlockSynced'
 // event LogBidExpired(uint bidId);
 // event LogBidCompleted(uint bidId, bytes32 advReport, bytes32 pubReport);
 
-function getLastSyncedBlock() {
+const getLastSyncedBlock = () => {
     return new Promise((resolve, reject) => {
         redisClient.get(LAST_BLOCK_KEY, (err, reply) => {
             if (err) {
@@ -24,7 +24,7 @@ function getLastSyncedBlock() {
     })
 }
 
-function setLastSyncedBlock(blockNumber) {
+const setLastSyncedBlock = (blockNumber) => {
     return new Promise((resolve, reject) => {
         redisClient.set(LAST_BLOCK_KEY, blockNumber, (err, reply) => {
             if (err) {
@@ -36,32 +36,50 @@ function setLastSyncedBlock(blockNumber) {
     })
 }
 
-function syncEvents() {
+const checkEvents = () => {
+    setTimeout(syncEvents, 30 * 1000)
+}
+
+const syncEvents = () => {
 
     let getSynced = getLastSyncedBlock()
     let getLatest = web3.eth.getBlockNumber()
-    let lastSynced = 0
+    let prevSynced = 0
+    let latestSynced = 0
 
     Promise.all([getSynced, getLatest])
         .then(([synced, latest]) => {
-            // console.log('sync]ed latest', synced, latest)
-            lastSynced = synced
-            return exchange.getPastEvents('allEvents', { fromBlock: synced, toBlock: latest })
+            synced = parseInt(synced, 10)
+            console.log('sync]ed latest', synced, latest)
+            prevSynced = synced
+            latestSynced = latest
+
+            // We assume that the events are already synced and dont need to update the bids again
+            // TODO: check it!
+            if (synced === latest) {
+                return []
+            } else {
+                return exchange.getPastEvents('allEvents', { fromBlock: synced, toBlock: latest })
+            }
         })
         .then((events) => {
-            // console.log('allEvents events', events)
-            //TODO: get events end update bids in mongo
-            //Then set lasts synced block
-            //Then call again syncEvents
+            console.log('allEvents events', events)
 
-            updateDbBids(events)
+            return updateDbBids(events)
+        })
+        .then(() => {
+            return setLastSyncedBlock(latestSynced)
+        })
+        .then(() => {
+            checkEvents()
         })
         .catch((err) => {
             console.log('allEvents err', err)
+            return checkEvents()
         })
 }
 
-function init() {
+const init = () => {
     web3.eth.net.isListening()
         .then(() => {
             console.log('is connected')
@@ -71,7 +89,7 @@ function init() {
 }
 
 // TODO: move this functions to the bids
-function mapLogBidAccepted(ev) {
+const mapLogBidAccepted = (ev) => {
     let returnValues = ev.returnValues
 
     return {
@@ -92,22 +110,22 @@ function mapLogBidAccepted(ev) {
     }
 }
 
-function mapLogBidCanceled(ev) {
+const mapLogBidCanceled = (ev) => {
     return {}
     //TODO:
 }
 
-function mapLogBidExpired(ev) {
+const mapLogBidExpired = (ev) => {
     return {}
     //TODO:
 }
 
-function mapLogBidCompleted(ev) {
+const mapLogBidCompleted = (ev) => {
     return {}
     //TODO:
 }
 
-function mapEventToDbOperations(ev) {
+const mapEventToDbOperations = (ev) => {
     switch (ev.event) {
         case BID_STATES.Accepted.eventName:
             return mapLogBidAccepted(ev)
@@ -123,28 +141,25 @@ function mapEventToDbOperations(ev) {
     }
 }
 
-function updateDbBids(events = []) {
-    return new Promise((resolve, reject) => {
-        let bulkWriteEvents = events.map((ev) => {
-            delete ev.raw
-            delete ev.signature
-            delete ev.blockHash
-            delete ev.returnValues[0]
-            delete ev.returnValues[1]
-            delete ev.returnValues[2]
-            delete ev.returnValues[3]
-            delete ev.returnValues[4]
-            delete ev.returnValues[5]
+const updateDbBids = (events = []) => {
+    let bulkWriteEvents = events.map((ev) => {
+        delete ev.raw
+        delete ev.signature
+        delete ev.blockHash
+        delete ev.returnValues[0]
+        delete ev.returnValues[1]
+        delete ev.returnValues[2]
+        delete ev.returnValues[3]
+        delete ev.returnValues[4]
+        delete ev.returnValues[5]
 
-            return mapEventToDbOperations({ ...ev })
+        return mapEventToDbOperations({ ...ev })
 
-        })
-
-        console.log('bulkWriteEvents', bulkWriteEvents)
-
-        //TODO: fix mongo db init in order to use it here 
-        return resolve(Bids.bulkWriteBids(bulkWriteEvents))
     })
+
+    // console.log('bulkWriteEvents', bulkWriteEvents)
+
+    return Bids.bulkWriteBids(bulkWriteEvents)
 }
 
 module.exports = init
