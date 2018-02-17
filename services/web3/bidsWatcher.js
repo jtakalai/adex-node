@@ -1,20 +1,54 @@
 const { web3, cfg, token, exchange, web3Utils } = require('./ADX')
+const redisClient = require('./../../redisInit')
 
-web3.eth.getBlockNumber(console.log)
-// console.log('exchange', exchange)
+const LAST_BLOCK_KEY = 'lastEthBlockSynced'
 
 // event LogBidAccepted(uint bidId, address advertiser, bytes32 adunit, address publisher, bytes32 adslot, uint acceptedTime);
 // event LogBidCanceled(uint bidId);
 // event LogBidExpired(uint bidId);
 // event LogBidCompleted(uint bidId, bytes32 advReport, bytes32 pubReport);
 
-function watchAccepted() {
+function getLastSyncedBlock() {
+    return new Promise((resolve, reject) => {
+        redisClient.get(LAST_BLOCK_KEY, (err, reply) => {
+            if (err) {
+                return reject(err)
+            }
 
-    // console.log('exchange.events', exchange.events)
-    exchange
-        .getPastEvents('allEvents', { fromBlock: 2664071, toBlock: 'latest' })
+            return resolve(reply || 0)
+        })
+    })
+}
+
+function setLastSyncedBlock(blockNumber) {
+    return new Promise((resolve, reject) => {
+        redisClient.set(LAST_BLOCK_KEY, blockNumber, (err, reply) => {
+            if (err) {
+                return reject(err)
+            }
+
+            return resolve(blockNumber)
+        })
+    })
+}
+
+function syncEvents() {
+
+    let getSynced = getLastSyncedBlock()
+    let getLatest = web3.eth.getBlockNumber()
+    let lastSynced = 0
+
+    Promise.all([getSynced, getLatest])
+        .then(([synced, latest]) => {
+            // console.log('sync]ed latest', synced, latest)
+            lastSynced = synced
+            return exchange.getPastEvents('allEvents', { fromBlock: synced, toBlock: latest })
+        })
         .then((events) => {
             console.log('allEvents events', events)
+            //TODO: get events end update bids in mongo
+            //Then set lasts synced block
+            //Then call again syncEvents
         })
         .catch((err) => {
             console.log('allEvents err', err)
@@ -25,7 +59,7 @@ function init() {
     web3.eth.net.isListening()
         .then(() => {
             console.log('is connected')
-            watchAccepted()
+            syncEvents()
         })
         .catch((err) => console.log('web3 isListening err', err))
 }
