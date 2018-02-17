@@ -13,10 +13,12 @@ var redisClient = require('./redisInit')
 
 const Web3 = require('web3');
 var web3 = new Web3();
+const bidsWatcher = require('./services/web3/bidsWatcher')
 
 //TODO: fix db connection
 mongodb.connect((err) => {
 	initApp()
+	bidsWatcher()
 })
 
 const initApp = () => {

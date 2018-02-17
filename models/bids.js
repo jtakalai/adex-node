@@ -9,6 +9,7 @@ const { Bid } = require('adex-models')
 const { getAddrFromEipTypedSignedMsg } = require('./../services/web3/utils')
 
 const bidsCollection = db.collection('bids')
+const BID_STATES = constants.exchange.BID_STATES
 
 class Bids {
     placeBid({ bid, user }) {
@@ -34,7 +35,7 @@ class Bids {
                                 console.log('unit', unit)
                                 console.log('bidInst', bidInst)
 
-                                bidInst.state = constants.exchange.BID_STATES.DoesNotExist.id
+                                bidInst.state = BID_STATES.DoesNotExist.id
                                 bidInst.createdOn = Date.now() // bidInst.opened ?
                                 bidInst.adUnitId = ObjectId(bidInst.adUnitId)
                                 bidInst.advertiser = user
@@ -83,7 +84,7 @@ class Bids {
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
-            _state: constants.exchange.BID_STATES.DoesNotExist.id,
+            _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
             _advertiser: { $ne: user } // TODO: keep all addresses in lower case
         }
@@ -103,7 +104,7 @@ class Bids {
     getActiveBidsAdUnitsForSlot({ adSlotId }) {
         let query = {
             //NOTE: the query when everything works
-            // _state: _state = constants.exchange.BID_STATES.Accepted.id,
+            // _state: _state = BID_STATES.Accepted.id,
             // _adSlotId: ObjectId(adSlotId),
             // { $expr: { $lt: [ "$clicksCount" , "$_target" ] } } 
 
@@ -136,12 +137,52 @@ class Bids {
     }
 
     addClicksToBid({ id, clicks = 1 }) {
+        let query = { _id: id }
+        let update = {
+            $inc: { clicksCount: clicks }
+        }
+
+        return this.updateBid({ query: query, update: update })
+    }
+
+    addUnconfirmedState({ bidId, state, trHash, user }) {
+        state = parseInt(state, 10)
+        let query = {}
+
+        switch (state) {
+            case BID_STATES.Accepted.id:
+                query = { _advertiser: { $ne: user } }
+                break
+            case BID_STATES.Canceled.id:
+                query = { $or: [{ _advertiser: user }, { _publisher: user }] }
+                break
+            case BID_STATES.Expired.id:
+                query = { _advertiser: user }
+                break
+            case BID_STATES.Completed.id:
+                query = { $or: [{ _advertiser: user }, { _publisher: user }] }
+                break
+            default:
+                break
+        }
+
+        query = Object.assign(query, { _id: bidId })
+
+        console.log('query', query)
+        let update = {
+            unconfirmedStateId: state, 
+            unconfirmedStateTrHash: trHash, 
+        }
+
+        return this.updateBid({ query: query, update: update })
+    }
+
+
+    updateBid({ query, update }) {
         return new Promise((resolve, reject) => {
             bidsCollection
-                .update({ _id: id },
-                    {
-                        $inc: { clicksCount: clicks }
-                    }, (err, res) => {
+                .update(query,
+                    update, (err, res) => {
                         if (err) {
                             console.log('addClicksToBid err', err)
                             return reject(err)
