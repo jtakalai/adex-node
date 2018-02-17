@@ -9,7 +9,7 @@ const { Bid } = require('adex-models')
 const { getAddrFromEipTypedSignedMsg } = require('./../services/web3/utils')
 
 const bidsCollection = db.collection('bids')
-const BID_STATES = constants.exchange.BID_STATES
+const { BID_STATES } = constants.exchange
 
 class Bids {
     placeBid({ bid, user }) {
@@ -53,6 +53,7 @@ class Bids {
                                 dbBid.unconfirmedStateId = BID_STATES.DoesNotExist.id
                                 dbBid.unconfirmedStateTrHash = null
                                 dbBid.unconfirmedStateTime = 0 // TODO: set some timeout for confirmation
+                                dbBid.confirmedEvents = []
 
                                 bidsCollection
                                     .insertOne(dbBid, (err, result) => {
@@ -201,6 +202,22 @@ class Bids {
 
                         resolve(res.result)
                     })
+        })
+    }
+
+    bulkWriteBids(bulk) {
+        return new Promise((resolve, reject) => {
+            bidsCollection
+                .bulkWrite(bulk, (err, res) => {
+                    if (err) {
+                        console.log('bulkWriteBids err', err)
+                        return reject(err)
+                    }
+
+                    console.log('bulkWriteBids res', res)
+
+                    resolve(res.result)
+                })
         })
     }
 }

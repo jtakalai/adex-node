@@ -1,5 +1,8 @@
+const constants = require('adex-constants')
+const { helpers } = require('adex-models')
 const { web3, cfg, token, exchange, web3Utils } = require('./ADX')
 const redisClient = require('./../../redisInit')
+const { BID_STATES, BidStatesEventNames } = constants.exchange
 
 const LAST_BLOCK_KEY = 'lastEthBlockSynced'
 
@@ -45,10 +48,12 @@ function syncEvents() {
             return exchange.getPastEvents('allEvents', { fromBlock: synced, toBlock: latest })
         })
         .then((events) => {
-            console.log('allEvents events', events)
+            // console.log('allEvents events', events)
             //TODO: get events end update bids in mongo
             //Then set lasts synced block
             //Then call again syncEvents
+
+            updateDbBids(events)
         })
         .catch((err) => {
             console.log('allEvents err', err)
@@ -62,6 +67,73 @@ function init() {
             syncEvents()
         })
         .catch((err) => console.log('web3 isListening err', err))
+}
+
+// TODO: move this functions to the bids
+function mapLogBidAccepted(ev) {
+    let returnValues = ev.returnValues
+    return {
+        updateOne: {
+            filter: { _id: returnValues.bidId },
+            update: {
+                $set: {
+                    _publisher: returnValues.publisher,
+                    _adSlot: helpers.from32BytesHexIpfs(returnValues.adslot), //It come in hex from ipfs hash, TODO: keep the hex value for the adunit in the db as it is on the contract? 
+                    _acceptedTime: parseInt(returnValues.acceptedTime, 10),
+                    _state: BID_STATES.Accepted.id
+                },
+                //TODO: Do we need this data in the db and if we need it, what part of it. Temp push the ev.transactionHash
+                $push: {
+                    confirmedEvents: ev.transactionHash
+                }
+            }
+        }
+    }
+}
+
+function mapLogBidCanceled(ev) {
+    return {}
+    //TODO:
+}
+
+function mapLogBidExpired(ev) {
+    return {}
+    //TODO:
+}
+
+function mapLogBidCompleted(ev) {
+    return {}
+    //TODO:
+}
+
+function mapEventToDbOperations(ev) {
+    switch (ev.event) {
+        case BID_STATES.Accepted.eventName:
+            return mapLogBidAccepted(ev)
+        case BID_STATES.Canceled.eventName:
+            return mapLogBidCanceled(ev)
+        case BID_STATES.Expired.eventName:
+            return mapLogBidExpired(ev)
+        case BID_STATES.Completed.eventName:
+            return mapLogBidCompleted(ev)
+
+        default:
+            return null
+    }
+}
+
+function updateDbBids(events = []) {
+    return new Promise((resolve, reject) => {
+        let bulkWriteEvents = events.map((ev) => {
+            return mapEventToDbOperations(ev)
+
+        })
+
+        console.log('bulkWriteEvents', bulkWriteEvents)
+
+        //TODO: fix mongo db init in order to use it here 
+        return resolve(bulkWriteEvents)
+    })
 }
 
 module.exports = init
