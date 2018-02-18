@@ -93,7 +93,7 @@ class Bids {
             _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
             _advertiser: { $ne: user }, // TODO: keep all addresses in lower case
-            unconfirmedStateId: BID_STATES.Accepted.id
+            // unconfirmedStateId: BID_STATES.Accepted.id
             // TODO: Maybe some timeout from  unconfirmedStateTime
         }
 
