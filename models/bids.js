@@ -100,10 +100,12 @@ class Bids {
         return this.getBids(query)
     }
 
-    getSlotBids({ user, adSlotId }) {
+    getSlotBids({ user, adSlot }) {
+        // NOTE: Select by adslot ipfs because it is set by exchange event LogBidAccepted
+        // TODO: maybe we need to get the mongo _id when set but now this is set by bulkWrite and look good
         let query = {
             _publisher: user,
-            _adSlotId: ObjectId(adSlotId)
+            _adSlot: adSlot
         }
 
         return this.getBids(query)

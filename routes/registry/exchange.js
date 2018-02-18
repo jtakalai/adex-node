@@ -34,7 +34,7 @@ router.get('/bids', (req, res) => {
     if (query.unit) {
         action = Bids.getAdUnitBids({ user: user, adUnitId: query.unit })
     } else if (query.slot) {
-        action = Bids.getSlotBids({ user: user, adSlotId: query.slot })
+        action = Bids.getSlotBids({ user: user, adSlot: query.slot })
     } else if (query.sizeAndType || query.sizeAndType === '0') {
         action = Bids.getNotAcceptedBidsBySizeAndType({ sizeAndType: query.sizeAndType, user: user })
     }

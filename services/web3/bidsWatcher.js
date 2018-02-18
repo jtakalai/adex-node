@@ -94,7 +94,7 @@ const mapLogBidAccepted = (ev) => {
             update: {
                 $set: {
                     _state: BID_STATES.Accepted.id,
-                    _publisher: returnValues.publisher,
+                    _publisher: returnValues.publisher.toLowerCase(),
                     _adSlot: helpers.from32BytesHexIpfs(returnValues.adslot), //It come in hex from ipfs hash, TODO: keep the hex value for the adunit in the db as it is on the contract? 
                     _acceptedTime: parseInt(returnValues.acceptedTime, 10)
                 },
@@ -134,9 +134,7 @@ const mapLogBidExpired = (ev) => {
             filter: { _id: returnValues.bidId },
             update: {
                 $set: {
-                    _state: BID_STATES.Completed.id,
-                    _publisherConfirmation: helpers.from32BytesHexIpfs(returnValues.pubReport),
-                    _advertiserConfirmation: helpers.from32BytesHexIpfs(returnValues.advReport)
+                    _state: BID_STATES.Expired.id
                 },
                 $push: {
                     confirmedEvents: ev
@@ -155,7 +153,9 @@ const mapLogBidCompleted = (ev) => {
             filter: { _id: returnValues.bidId },
             update: {
                 $set: {
-                    _state: BID_STATES.Expired.id
+                    _state: BID_STATES.Completed.id,
+                    _publisherConfirmation: helpers.from32BytesHexIpfs(returnValues.pubReport),
+                    _advertiserConfirmation: helpers.from32BytesHexIpfs(returnValues.advReport)
                 },
                 $push: {
                     confirmedEvents: ev
