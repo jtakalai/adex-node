@@ -85,6 +85,22 @@ function registerEndpoint() {
             });
         }
     });
+    router.get('/reports', function (request, response) {
+        var bid = {};
+        try {
+            bid = JSON.parse(request.query.bid);
+        } catch (err) {
+            response.status(400).send({ error: 'Invalid bid id' });
+            return
+        }
+        redisClient.hgetall(['time:' + bid + ':click'], (err, result) => {
+            var clicks = 0;
+            Object.values(result).forEach(function(element) {
+                clicks += parseInt(element);
+            });
+            response.json({'clicks': clicks});
+        })
+    });
 }
 
 function submitEntry(payload, response) {
