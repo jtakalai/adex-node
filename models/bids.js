@@ -226,6 +226,27 @@ class Bids {
                 })
         })
     }
+
+    getBid({ id }) {
+        return new Promise((resolve, reject) => {
+            bidsCollection
+                .findOne({
+                    _id: id
+                }, (err, item) => {
+                    if (err) {
+                        console.log('getBid', err)
+                        return reject(err)
+                    }
+
+                    if (!item) {
+                        reject('Bid with id: ' + id + ' not found!')
+                    }
+
+                    // console.log('getItemById', item)
+                    return resolve(item)
+                })
+        })
+    }
 }
 
 module.exports = new Bids()

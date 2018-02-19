@@ -9,6 +9,7 @@ const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
 const Bids = require('./../../models/bids')
+const redisClient = require('./../../redisInit')
 
 router.post('/bids', (req, res) => {
     let bid = req.body
@@ -62,6 +63,58 @@ router.post('/bid-state', (req, res) => {
         .catch((err) => {
             console.log(err)
             res.status(500).send(err)
+        })
+})
+
+const getReportsStats = (bid) => {
+    return new Promise((resolve, reject) => {
+        redisClient.hgetall(['time:' + bid + ':click'], (err, result) => {
+            if (err) {
+                return reject(err)
+            }
+
+            var clicks = 0
+            Object.values(result || {}).forEach(function (element) {
+                clicks += parseInt(element)
+            })
+
+            return resolve({ allClicks: clicks })
+        })
+    })
+}
+
+router.get('/bid-report', function (req, res) {
+    const bid = req.query.bidId
+
+    if (!bid) {
+        return res.status(400).send({ error: 'Invalid bid id' })
+    }
+
+    const stats = [
+        getReportsStats(bid),
+        Bids.getBid({ id: bid })
+    ]
+
+    let report = {}
+
+    Promise.all(stats)
+        .then(([allEvents, verifiedBid]) => {
+            allEvents['verifiedClicks'] = verifiedBid.clicksCount
+
+            report = JSON.stringify(allEvents)
+            return ipfs.addFileToIpfs(report)
+        })
+        .then((ipfsHash) => {
+            let result = {
+                report: report,
+                ipfs: ipfsHash
+            }
+
+            res.send(result)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(400).send(err)
         })
 })
 

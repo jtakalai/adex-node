@@ -1,23 +1,22 @@
 'use strict';
 
 const express = require('express');
-var router = express.Router();
+const router = express.Router();
 const redis = require('redis');
 const scripto = require('redis-scripto');
 
-var redisClient = require('./../../redisInit')
+const redisClient = require('./../../redisInit')
 const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
-let { SIGN_TYPES } = require('adex-constants').exchange
+const { SIGN_TYPES } = require('adex-constants').exchange
 
-
-var bidModel = require('./../../models/bids')
+const bidsModel = require('./../../models/bids')
 
 const pid = process.pid;
 
 
 var scriptManager = null;
-var EXPIRY_INTERVAL = 2678400;
-var MSECS_IN_SEC = 1000;
+const EXPIRY_INTERVAL = 2678400;
+const MSECS_IN_SEC = 1000;
 
 redisLoadScript();
 registerEndpoint();
@@ -84,22 +83,6 @@ function registerEndpoint() {
                 response.json(result);
             });
         }
-    });
-    router.get('/reports', function (request, response) {
-        var bid = {};
-        try {
-            bid = JSON.parse(request.query.bid);
-        } catch (err) {
-            response.status(400).send({ error: 'Invalid bid id' });
-            return
-        }
-        redisClient.hgetall(['time:' + bid + ':click'], (err, result) => {
-            var clicks = 0;
-            Object.values(result).forEach(function(element) {
-                clicks += parseInt(element);
-            });
-            response.json({'clicks': clicks});
-        })
     });
 }
 
@@ -183,7 +166,7 @@ function submitClick(payload) {
                             console.log('[HSET] Add user entry failed failed ' + err);
                         }
                         if (result > 0)
-                            return bidModel.addClicksToBid({ id: payload.bid });
+                            return bidsModel.addClicksToBid({ id: payload.bid });
                         else
                             console.log('Click event from ' + payload.address + ' already in DB');
                     })
