@@ -1,7 +1,9 @@
 const ipfsAPI = require('ipfs-api')
+const ipfsHost = process.env.IPFSHOST || 'ipfs.infura.io'
+const ipfsPort = process.env.IPFSPORT || '5001'
+const ipfsProtocol = process.env.IPFSPROTOCOL || 'https'
 
-//TODO: dev/prod settings
-const ipfs = ipfsAPI('localhost', '5001')
+const ipfs = ipfsAPI(ipfsHost, ipfsPort, { protocol: ipfsProtocol })
 
 function addFileToIpfs(file) {
     return new Promise((resolve, reject) => {
@@ -14,7 +16,7 @@ function addFileToIpfs(file) {
             .catch(function (err) {
                 //TODO: Logger
                 console.log(err)
-                return resolve('ipfs error', err)
+                return reject('ipfs error', err)
             })
     })
 }
