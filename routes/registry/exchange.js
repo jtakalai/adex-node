@@ -90,6 +90,7 @@ router.get('/bid-report', function (req, res) {
         return res.status(400).send({ error: 'Invalid bid id' })
     }
 
+    // TODO: If this is only verification report we should first check the verified click to be equal the bid target
     const stats = [
         getReportsStats(bid),
         Bids.getBid({ id: bid })
