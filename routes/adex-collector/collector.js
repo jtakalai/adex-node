@@ -157,8 +157,6 @@ function submitClick(payload) {
     if (!!authRes.then) {
         authRes
             .then((recoveredAddr) => {
-                console.log(authRes);
-                console.log(recoveredAddr);
                 if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
                     /* Additional entry in redis */
                     redisClient.hset(['bid:' + payload.bid + ':users', payload.address, payload.time], (err, result) => {
