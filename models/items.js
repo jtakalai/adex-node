@@ -4,7 +4,7 @@ const db = require('./../mongoConnection').getDb()
 const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
-const { Item } = require('adex-models')
+const { Item, Models } = require('adex-models')
 
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
@@ -35,20 +35,18 @@ class Items {
         return new Promise((resolve, reject) => {
             let sizeAndType = Item.sizeAndType({ adType: meta.adType, size: meta.size })
 
-            //TODO: new item from Item model instance
-            let dbItem = {
-                type: item._type, //unit / slot 
-                user: user,
-                _description: item._description, //Field only users info not in ipfs
-                _items: [],
-                _meta: meta, // the _meta as in ipfs
-                _ipfs: ipfs,
-                sizeAndType: sizeAndType,
-                _createdOn: createdOn || Date.now(),
-                _modifiedOn: undefined,
-                _deleted: false,
-                _archived: false
-            }
+            item._meta = meta
+            let itemInst = new Models.itemClassByTypeId[item._type](item)
+
+            let dbItem = itemInst.plainObj()
+            dbItem._createdOn = createdOn
+            dbItem._ipfs = ipfs
+            // TODO: use _type
+            dbItem.type = itemInst.type
+            delete dbItem.type
+            dbItem.user = user
+            dbItem.sizeAndType = itemInst.sizeAndType
+            delete dbItem._id
 
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[item._type])
                 .insertOne(dbItem, (err, result) => {
