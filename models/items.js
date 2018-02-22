@@ -40,10 +40,7 @@ class Items {
 
             let dbItem = itemInst.plainObj()
             dbItem._createdOn = createdOn
-            dbItem._ipfs = ipfs
-            // TODO: use _type
-            dbItem.type = itemInst.type
-            delete dbItem.type
+            dbItem._ipfs = ipfs        
             dbItem.user = user
             dbItem.sizeAndType = itemInst.sizeAndType
             delete dbItem._id
@@ -85,9 +82,9 @@ class Items {
     getUserItems(user, type) {
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
-                .find({ user: user, type: parseInt(type), _deleted: false })
+                .find({ user: user, _type: parseInt(type), _deleted: false })
                 .project({
-                    type: 1,
+                    _type: 1,
                     _description: 1,
                     _meta: 1,
                     _ipfs: 1,
