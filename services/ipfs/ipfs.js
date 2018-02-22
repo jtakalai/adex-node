@@ -11,7 +11,11 @@ function addFileToIpfs(file) {
         ipfs.files.add(buffer)
             .then(function (result) {
                 // console.log('addFileToIpfs result', result)
-                return resolve(result[0].hash)
+                if (result[0]) {
+                    return resolve(result[0].hash)
+                } else {
+                    return reject('Error adding data to ipfs')
+                }
             })
             .catch(function (err) {
                 //TODO: Logger
