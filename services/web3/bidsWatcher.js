@@ -45,7 +45,7 @@ const syncEvents = () => {
     Promise.all([getSynced, getLatest])
         .then(([synced, latest]) => {
             synced = parseInt(synced, 10)
-            console.log('sync]ed latest', synced, latest)
+            console.log('synced latest', synced, latest)
             prevSynced = synced
             latestSynced = latest
 

@@ -6,14 +6,8 @@ const express = require('express');
 const session = require('express-session');
 const headerParser = require('header-parser');
 const bodyParser = require('body-parser');
-// const cookieParser = require('cookie-parser');
 const mongodb = require('./mongoConnection')
-// const RedisStore = require('connect-redis')(session);
 var redisClient = require('./redisInit')
-
-const Web3 = require('web3');
-var web3 = new Web3();
-// const bidsWatcher = 
 
 //TODO: fix db connection
 mongodb.connect((err) => {
