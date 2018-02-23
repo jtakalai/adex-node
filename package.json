@@ -17,7 +17,7 @@
   "homepage": "https://bitbucket.org/stremio/adex-node#readme",
   "dependencies": {
     "adex-constants": "1.0.4",
-    "adex-models": "1.0.3",
+    "adex-models": "1.0.4",
     "body-parser": "^1.18.2",
     "cluster": "^0.7.7",
     "connect-redis": "^3.3.3",
