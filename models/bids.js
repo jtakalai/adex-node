@@ -115,12 +115,12 @@ class Bids {
     getActiveBidsAdUnitsForSlot({ adSlotId }) {
         let query = {
             //NOTE: the query when everything works
-            // _state: BID_STATES.Accepted.id,
-            // _adSlotId: ObjectId(adSlotId),
-            // $expr: { $lt: ["$clicksCount", "$_target"] },
+            _state: BID_STATES.Accepted.id,
+            _adSlotId: ObjectId(adSlotId),
+            $expr: { $lt: ["$clicksCount", "$_target"] },
 
             //TEMP query
-            _adSlotId: { $ne: null }
+            // _adSlotId: { $ne: null }
         }
 
         let project = {

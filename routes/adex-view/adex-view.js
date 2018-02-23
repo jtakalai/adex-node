@@ -7,7 +7,7 @@ const Items = require('./../../models/items')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 
-router.get('/a-d-e-x-view', function (req, res) {
+router.get('/view', function (req, res) {
     // let jsonp = request.query.callback
     // console.log('jsonp', jsonp)
 
