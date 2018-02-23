@@ -5,11 +5,11 @@ const redisClient = require('./../../redisInit')
 const { BID_STATES, BidStatesEventNames } = constants.exchange
 const Bids = require('./../../models/bids')
 
-const LAST_BLOCK_KEY = 'lastEthBlockSynced'
+const LAST_BLOCK_KEY = 'lastEthBlockSynced-'
 
 const getLastSyncedBlock = () => {
     return new Promise((resolve, reject) => {
-        redisClient.get(LAST_BLOCK_KEY, (err, reply) => {
+        redisClient.get(LAST_BLOCK_KEY + cfg.exchange, (err, reply) => {
             if (err) {
                 return reject(err)
             }
@@ -21,7 +21,7 @@ const getLastSyncedBlock = () => {
 
 const setLastSyncedBlock = (blockNumber) => {
     return new Promise((resolve, reject) => {
-        redisClient.set(LAST_BLOCK_KEY, blockNumber, (err, reply) => {
+        redisClient.set(LAST_BLOCK_KEY + cfg.exchange, blockNumber, (err, reply) => {
             if (err) {
                 return reject(err)
             }
@@ -98,7 +98,7 @@ const mapLogBidAccepted = (ev) => {
                     _adSlot: helpers.from32BytesHexIpfs(returnValues.adslot), //It come in hex from ipfs hash, TODO: keep the hex value for the adunit in the db as it is on the contract? 
                     _acceptedTime: parseInt(returnValues.acceptedTime, 10)
                 },
-                $push: {
+                $addToSet: {
                     confirmedEvents: ev
                 }
             }
@@ -117,7 +117,7 @@ const mapLogBidCanceled = (ev) => {
                 $set: {
                     _state: BID_STATES.Canceled.id
                 },
-                $push: {
+                $addToSet: {
                     confirmedEvents: ev
                 }
             }
@@ -136,7 +136,7 @@ const mapLogBidExpired = (ev) => {
                 $set: {
                     _state: BID_STATES.Expired.id
                 },
-                $push: {
+                $addToSet: {
                     confirmedEvents: ev
                 }
             }
@@ -157,7 +157,7 @@ const mapLogBidCompleted = (ev) => {
                     _publisherConfirmation: helpers.from32BytesHexIpfs(returnValues.pubReport),
                     _advertiserConfirmation: helpers.from32BytesHexIpfs(returnValues.advReport)
                 },
-                $push: {
+                $addToSet: {
                     confirmedEvents: ev
                 }
             }
