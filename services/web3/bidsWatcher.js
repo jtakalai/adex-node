@@ -4,48 +4,32 @@ const { web3, cfg, token, exchange, web3Utils } = require('./ADX')
 const redisClient = require('./../../redisInit')
 const { BID_STATES, BidStatesEventNames } = constants.exchange
 const Bids = require('./../../models/bids')
+const { promisify } = require('util')
 
 const LAST_BLOCK_KEY = 'lastEthBlockSynced-'
+let eventsLoop = null
 
 const getLastSyncedBlock = () => {
-    return new Promise((resolve, reject) => {
-        redisClient.get(LAST_BLOCK_KEY + cfg.exchange, (err, reply) => {
-            if (err) {
-                return reject(err)
-            }
-
-            return resolve(reply || 0)
-        })
-    })
+    return promisify(redisClient.get)
+        .bind(redisClient)(LAST_BLOCK_KEY + cfg.exchange)
+        .then((res) => res || 0)
 }
 
 const setLastSyncedBlock = (blockNumber) => {
-    return new Promise((resolve, reject) => {
-        redisClient.set(LAST_BLOCK_KEY + cfg.exchange, blockNumber, (err, reply) => {
-            if (err) {
-                return reject(err)
-            }
-
-            return resolve(blockNumber)
-        })
-    })
-}
-
-const checkEvents = () => {
-    setTimeout(syncEvents, 30 * 1000)
+    return promisify(redisClient.set)
+        .bind(redisClient)(LAST_BLOCK_KEY + cfg.exchange, blockNumber)
 }
 
 const syncEvents = () => {
-
     let getSynced = getLastSyncedBlock()
     let getLatest = web3.eth.getBlockNumber()
     let prevSynced = 0
     let latestSynced = 0
 
-    Promise.all([getSynced, getLatest])
+    return Promise.all([getSynced, getLatest])
         .then(([synced, latest]) => {
-            synced = parseInt(synced, 10)
             console.log('synced latest', synced, latest)
+            synced = parseInt(synced, 10)
             prevSynced = synced
             latestSynced = latest
 
@@ -65,12 +49,24 @@ const syncEvents = () => {
         .then(() => {
             return setLastSyncedBlock(latestSynced)
         })
+}
+
+const syncEventsLoop = () => {
+    if(eventsLoop){
+        clearTimeout(eventsLoop)
+        eventsLoop = null
+    }
+
+    eventsLoop = setTimeout(checkEvents, 30 * 1000)
+}
+
+const checkEvents = () => {
+    syncEvents()
         .then(() => {
-            checkEvents()
+            syncEventsLoop()
         })
-        .catch((err) => {
-            console.log('allEvents err', err)
-            return checkEvents()
+        .catch(() => {
+            syncEventsLoop()
         })
 }
 
@@ -78,7 +74,7 @@ const init = () => {
     web3.eth.net.isListening()
         .then(() => {
             console.log('is connected')
-            syncEvents()
+            checkEvents()
         })
         .catch((err) => console.log('web3 isListening err', err))
 }
