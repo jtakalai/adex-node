@@ -43,10 +43,13 @@ function registerEndpoint() {
         // ' start at ' + request.query.start + ' end at ' + request.query.end);
         if (request.query.start === undefined && request.query.end === undefined && request.query.interval == undefined) {
             redisClient.zcard(['bid:' + bid], (err, result) => {
-                if (err)
-                    throw err;
-                var whenEnd = Date.now();
-                response.json(result);
+                if (err) {
+                    res.status(401).send({ error: 'Internal server error' });
+                    console.log('Redis zcard error: ' + err);
+                } else {
+                    var whenEnd = Date.now();
+                    response.json(result);
+                }
                 // console.log('Zcard request took ' + (whenEnd - whenStart) + ' milliseconds');
             });
         } else if (request.query.interval !== undefined) {
@@ -54,14 +57,19 @@ function registerEndpoint() {
             ['hget', 'time:' + bid + ':impression', request.query.interval],
             ['hget', 'time:' + bid + ':leave', request.query.interval]
             ]).exec(function (err, replies) {
-                var whenEnd = Date.now();
-                var results = {
-                    'click': parseInt(replies[0], 10),
-                    'impression': parseInt(replies[1], 10),
-                    'leave': parseInt(replies[2], 10),
-                };
-                response.json(results);
-                console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
+                if (err) {
+                    res.status(401).send({ error: 'Internal server error' });
+                    console.log('Redis request error: ' + err);
+                } else {
+                    var whenEnd = Date.now();
+                    var results = {
+                        'click': parseInt(replies[0], 10),
+                        'impression': parseInt(replies[1], 10),
+                        'leave': parseInt(replies[2], 10),
+                    };
+                    response.json(results);
+                    console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
+                }
             });
         } else {
             var whenStart = Date.now();
@@ -98,9 +106,10 @@ function submitEntry(payload, response) {
         if (err) {
             console.log('[zadd] Add entry failed (' + result + ') ' + err)
             response.status(500).send({ error: '[zadd] Add entry failed (' + result + ') ' + err })
+            return
+        } else {
+            response.send(JSON.stringify({ updated: result }))
         }
-
-        response.send(JSON.stringify({ updated: result }))
     })
 
     if (payload.type === 'click') {
