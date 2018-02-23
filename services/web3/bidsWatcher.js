@@ -183,17 +183,25 @@ const mapEventToDbOperations = (ev) => {
 
 const updateDbBids = (events = []) => {
     let bulkWriteEvents = events.map((ev) => {
-        delete ev.raw
-        delete ev.signature
-        delete ev.blockHash
-        delete ev.returnValues[0]
-        delete ev.returnValues[1]
-        delete ev.returnValues[2]
-        delete ev.returnValues[3]
-        delete ev.returnValues[4]
-        delete ev.returnValues[5]
 
-        return mapEventToDbOperations({ ...ev })
+        let event = {
+            address: ev.address,
+            blockNumber: ev.blockNumber,
+            transactionHash: ev.transactionHash,
+            transactionIndex: ev.transactionIndex,
+            logIndex: ev.logIndex,
+            removed: ev.removed,
+            id: ev.id,
+            event: ev.event,
+            returnValues: Object.keys(ev.returnValues).reduce((memo, key) => {
+                if (isNaN(key)) {
+                    memo[key] = ev.returnValues[key]
+                }
+                return memo
+            }, {})
+        }
+
+        return mapEventToDbOperations(event)
 
     })
 
