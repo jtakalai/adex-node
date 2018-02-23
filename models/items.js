@@ -83,15 +83,6 @@ class Items {
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
                 .find({ user: user, _type: parseInt(type), _deleted: false })
-                .project({
-                    _type: 1,
-                    _description: 1,
-                    _meta: 1,
-                    _ipfs: 1,
-                    _items: 1,
-                    _createdOn: 1,
-                    _archived: 1
-                })
                 .toArray((err, result) => {
                     if (err) {
                         console.log('find items err', err)
