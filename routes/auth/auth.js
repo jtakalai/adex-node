@@ -9,6 +9,13 @@ const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('
 
 const EXPIRY_INTERVAL = 1000 * 60 * 60 * 24 * 1 // 1 Day //TODO: 30?
 
+router.get('/auth', (req, res) => {
+    let token = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+    //res.cookie('authToken', token)
+    return res.send(token.toString())
+
+})
+
 router.post('/auth', (req, res) => {
     var userid = req.body.userid,
         signature = req.body.signature,
