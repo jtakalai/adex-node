@@ -52,7 +52,7 @@ const syncEvents = () => {
 }
 
 const syncEventsLoop = () => {
-    if(eventsLoop){
+    if (eventsLoop) {
         clearTimeout(eventsLoop)
         eventsLoop = null
     }
@@ -178,28 +178,32 @@ const mapEventToDbOperations = (ev) => {
 }
 
 const updateDbBids = (events = []) => {
-    let bulkWriteEvents = events.map((ev) => {
+    let bulkWriteEvents = events.reduce((memo, ev) => {
 
-        let event = {
-            address: ev.address,
-            blockNumber: ev.blockNumber,
-            transactionHash: ev.transactionHash,
-            transactionIndex: ev.transactionIndex,
-            logIndex: ev.logIndex,
-            removed: ev.removed,
-            id: ev.id,
-            event: ev.event,
-            returnValues: Object.keys(ev.returnValues).reduce((memo, key) => {
-                if (isNaN(key)) {
-                    memo[key] = ev.returnValues[key]
-                }
-                return memo
-            }, {})
+        // NOTE: In meinnet thre are some undefined events
+        if (ev && ev.event && ev.returnValues && typeof ev.returnValues === 'object') {
+            let event = {
+                address: ev.address,
+                blockNumber: ev.blockNumber,
+                transactionHash: ev.transactionHash,
+                transactionIndex: ev.transactionIndex,
+                logIndex: ev.logIndex,
+                removed: ev.removed,
+                id: ev.id,
+                event: ev.event,
+                returnValues: Object.keys(ev.returnValues).reduce((memo, key) => {
+                    if (isNaN(key)) {
+                        memo[key] = ev.returnValues[key]
+                    }
+                    return memo
+                }, {})
+            }
+
+            memo.push(mapEventToDbOperations(event))
         }
 
-        return mapEventToDbOperations(event)
-
-    })
+        return memo
+    }, [])
 
     // console.log('bulkWriteEvents', bulkWriteEvents)
 
