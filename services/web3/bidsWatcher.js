@@ -11,13 +11,13 @@ let eventsLoop = null
 
 const getLastSyncedBlock = () => {
     return promisify(redisClient.get)
-        .bind(redisClient)(LAST_BLOCK_KEY + cfg.exchange)
+        .bind(redisClient)(LAST_BLOCK_KEY + cfg.addr.exchange)
         .then((res) => res || 0)
 }
 
 const setLastSyncedBlock = (blockNumber) => {
     return promisify(redisClient.set)
-        .bind(redisClient)(LAST_BLOCK_KEY + cfg.exchange, blockNumber)
+        .bind(redisClient)(LAST_BLOCK_KEY + cfg.addr.exchange, blockNumber)
 }
 
 const syncEvents = () => {
