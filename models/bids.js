@@ -24,8 +24,6 @@ class Bids {
 
             getAddrFromEipTypedSignedMsg({ signature: bidInst.signature.signature, typedData: bidInst.typed })
                 .then((signAddr) => {
-                    console.log('signAddr', signAddr)
-                    console.log('user', user)
 
                     if (signAddr.toLowerCase() === user.toLowerCase()) {
                         Items.getItem({ id: bidInst.adUnitId, user: user })
@@ -39,6 +37,15 @@ class Bids {
                                 bidInst.createdOn = Date.now() // bidInst.opened ?
                                 bidInst.adUnitId = ObjectId(bidInst.adUnitId)
                                 bidInst.advertiser = user
+                                /*  NOTE: Ensure integer or string values
+                                *   Maybe is safer as strings but that way some queries will be much faster 
+                                *   The amount will be string
+                                *   This should be done by models but the moment they are used for updating the dapp input fields
+                                *   and that checks causes some problems.
+                                * */
+                                bidInst.target = parseInt(bidInst.target, 10)
+                                bidInst.timeout = parseInt(bidInst.timeout, 10) // in seconds
+                                bidInst.amount = bidInst.amount.toString()
 
                                 //Db only
                                 bidInst.sizeAndType = unit.sizeAndType // index
@@ -190,7 +197,6 @@ class Bids {
 
         return this.updateBid({ query: query, update: update })
     }
-
 
     updateBid({ query, update }) {
         return new Promise((resolve, reject) => {
