@@ -100,6 +100,7 @@ router.get('/bid-report', function (req, res) {
 
     Promise.all(stats)
         .then(([allEvents, verifiedBid]) => {
+            allEvents['bidId'] = bid
             allEvents['verifiedUniqueClicks'] = verifiedBid.clicksCount
 
             report = allEvents
