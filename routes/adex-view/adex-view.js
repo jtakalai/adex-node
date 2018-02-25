@@ -19,16 +19,16 @@ router.get('/view', function (req, res) {
 
     // response.send(jsonp + '(' + resStr + ')')
 
-    let slotId = req.query.slotId
+    let slotIpfs = req.query.slotIpfs
 
-    if (!slotId) {
-        return res.status(404).send('No slot id query param provided')
+    if (!slotIpfs) {
+        return res.status(404).send('No slot ipfs id query param provided')
     }
 
     let bids = []
 
     //NOTE
-    Bids.getActiveBidsAdUnitsForSlot({ adSlotId: slotId })
+    Bids.getActiveBidsAdUnitsForSlot({ adSlot: slotIpfs })
         .then((bidsUnits) => {
             return bidsUnits.reduce((memo, bid, index) => {
                 memo.adUnitsIds.push(ObjectId(bid._adUnitId))

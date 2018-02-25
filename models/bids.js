@@ -119,11 +119,11 @@ class Bids {
     }
 
     // Bids for adslot adview (iframe)
-    getActiveBidsAdUnitsForSlot({ adSlotId }) {
+    getActiveBidsAdUnitsForSlot({ adSlot }) {
         let query = {
             //NOTE: the query when everything works
             _state: BID_STATES.Accepted.id,
-            _adSlotId: ObjectId(adSlotId),
+            _adSlot: adSlot, // SLOT ipfs from web3 event
             $expr: { $lt: ["$clicksCount", "$_target"] },
 
             //TEMP query
