@@ -100,10 +100,10 @@ router.get('/bid-report', function (req, res) {
 
     Promise.all(stats)
         .then(([allEvents, verifiedBid]) => {
-            allEvents['verifiedClicks'] = verifiedBid.clicksCount
+            allEvents['verifiedUniqueClicks'] = verifiedBid.clicksCount
 
-            report = JSON.stringify(allEvents)
-            return ipfs.addFileToIpfs(report)
+            report = allEvents
+            return ipfs.addFileToIpfs(JSON.stringify(report))
         })
         .then((ipfsHash) => {
             let result = {
@@ -115,7 +115,7 @@ router.get('/bid-report', function (req, res) {
         })
         .catch((err) => {
             console.log(err)
-            res.status(400).send(err)
+            res.status(500).send(err)
         })
 })
 
