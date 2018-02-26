@@ -161,6 +161,40 @@ const mapLogBidCompleted = (ev) => {
     }
 }
 
+// event LogBidConfirmed(bytes32 bidId, address advertiserOrPublisher, bytes32 report);
+const mapLogBidConfirmed = (ev) => {
+    const advertiserOrPublisher = ev.returnValues.advertiserOrPublisher.toLowerCase()
+    const report = ev.returnValues
+
+    return [
+        {
+            updateOne: {
+                filter: { _id: returnValues.bidId, _publisher: advertiserOrPublisher },
+                update: {
+                    $set: {
+                        _publisherConfirmation: helpers.from32BytesHexIpfs(report)
+                    },
+                    $addToSet: {
+                        confirmedEvents: ev
+                    }
+                }
+            }
+        }, {
+            updateOne: {
+                filter: { _id: returnValues.bidId, _advertiser: advertiserOrPublisher },
+                update: {
+                    $set: {
+                        _advertiserConfirmation: helpers.from32BytesHexIpfs(report)
+                    },
+                    $addToSet: {
+                        confirmedEvents: ev
+                    }
+                }
+            }
+        }
+    ]
+}
+
 const mapEventToDbOperations = (ev) => {
     switch (ev.event) {
         case BID_STATES.Accepted.eventName:
@@ -171,6 +205,8 @@ const mapEventToDbOperations = (ev) => {
             return mapLogBidExpired(ev)
         case BID_STATES.Completed.eventName:
             return mapLogBidCompleted(ev)
+        case 'LogBidConfirmed': // TEMP: Add it to constants 
+            return mapLogBidConfirmed(ev)
 
         default:
             return null
@@ -199,7 +235,15 @@ const updateDbBids = (events = []) => {
                 }, {})
             }
 
-            memo.push(mapEventToDbOperations(event))
+            let operation = mapEventToDbOperations(event)
+
+            if (operation) {
+                if (Array.isArray(operation)) {
+                    memo = memo.concat(operation)
+                } else {
+                    memo.push(operation)
+                }
+            }
         }
 
         return memo
