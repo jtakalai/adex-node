@@ -7,7 +7,7 @@ const router = express.Router()
 let { SIGN_TYPES } = require('adex-constants').exchange
 const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
 
-const EXPIRY_INTERVAL = 1000 * 60 * 60 * 24 * 1 // 1 Day //TODO: 30?
+const EXPIRY_INTERVAL = parseInt(process.env.AUTH_TIME || 0, 10) || (1000 * 60 * 60 * 24 * 30) // 30 days
 
 router.get('/auth', (req, res) => {
     let token = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
