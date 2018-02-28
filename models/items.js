@@ -63,7 +63,8 @@ class Items {
             query: { user: user, _id: ObjectId(id) },
             dbAction: {
                 $set: {
-                    _deleted: true
+                    _deleted: true,
+                    _modifiedOn: Date.now()
                 }
             },
             returnOriginal: false
@@ -86,7 +87,9 @@ class Items {
     }
 
     itemToItem({ user, type, item, collection, action }) {
-        let dbAction = {}
+        let dbAction = {
+            $set: { _modifiedOn: Date.now() }
+        }
         let itemsUpdate = { _items: ObjectId(collection) }
 
         if (action === 'add') {
@@ -167,11 +170,57 @@ class Items {
                     }
                 )
         })
+    }
 
+    updateItem({ item, user }) {
+        const type = constants.items.ItemTypeByTypeId[item._type]
+        const query = { user: user, _id: ObjectId(item._id) }
+        let dbAction = null
+
+        if (type === 'items') {
+            dbAction = this.updateItemTypeDbAction({ item: item })
+        } else if (type === 'collection') {
+            dbAction = this.updateCollectionTypeDbAction({ item: item, user: user })
+        }
+
+        return this.updateOneItem({
+            collection: this.getCollectionByItemType(type),
+            query: query,
+            dbAction: dbAction,
+            returnOriginal: false
+        })
+    }
+
+    updateItemTypeDbAction({ item }) {
+        const dbAction = {
+            $set: {
+                _description: item._description,
+                _modifiedOn: Date.now()
+            }
+        }
+
+        return dbAction
+    }
+
+    updateCollectionTypeDbAction({ item, user }) {
+        let itemInst = new Models.itemClassByTypeId[item._type](item)
+        itemInst.modifiedOn = Date.now()
+        let dbItem = itemInst.plainObj()
+
+        dbItem.user = user
+        dbItem.sizeAndType = itemInst.sizeAndType
+        delete dbItem._id
+
+        return dbItem
     }
 
     updateOneItem({ collection, query, dbAction, returnOriginal = false }) {
         return new Promise((resolve, reject) => {
+            if (!dbAction) {
+                return reject('Invalid db action')
+            }
+
+            // dbAction.$set._modifiedOn = Date.now()
             collection
                 .findOneAndUpdate(
                     query,

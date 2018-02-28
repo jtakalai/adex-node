@@ -37,6 +37,21 @@ router.post('/items', (req, res) => {
         })
 })
 
+router.put('/items', (req, res) => {
+    //TODO: decide what body data type to use
+    let item = req.body
+
+    Items.updateItem({ item: item, user: req.user })
+        .then((itm) => {
+            console.log('db item', itm)
+            res.send(itm)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(500).send(err)
+        })
+})
+
 router.get('/items', (req, res) => {
     Items.getUserItems(req.user, req.query.type)
         .then((items) => {
