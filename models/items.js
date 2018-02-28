@@ -40,7 +40,7 @@ class Items {
 
             let dbItem = itemInst.plainObj()
             dbItem._createdOn = createdOn
-            dbItem._ipfs = ipfs        
+            dbItem._ipfs = ipfs
             dbItem.user = user
             dbItem.sizeAndType = itemInst.sizeAndType
             delete dbItem._id
@@ -58,24 +58,15 @@ class Items {
     }
 
     flagItemDeleted({ id, type, user }) {
-        return new Promise((resolve, reject) => {
-            this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
-                .findOneAndUpdate({ user: user, _id: ObjectId(id) },
-                    {
-                        $set: {
-                            _deleted: true
-                        }
-                    },
-                    { returnNewDocument: true }
-                    , (err, res) => {
-                        if (err) {
-                            console.log('flagItemDeleted', err)
-                            return reject(err)
-                        }
-
-                        console.log(res)
-                        return resolve(res.value || {})
-                    })
+        return this.updateOneItem({
+            collection: this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type]),
+            query: { user: user, _id: ObjectId(id) },
+            dbAction: {
+                $set: {
+                    _deleted: true
+                }
+            },
+            returnOriginal: false
         })
     }
 
@@ -96,36 +87,20 @@ class Items {
 
     itemToItem({ user, type, item, collection, action }) {
         let dbAction = {}
+        let itemsUpdate = { _items: ObjectId(collection) }
 
         if (action === 'add') {
-            dbAction = {
-                $addToSet: {
-                    _items: ObjectId(collection)
-                }
-            }
+            dbAction.$addToSet = itemsUpdate
+
         } else if (action === 'remove') {
-            dbAction = {
-                $pull: {
-                    _items: ObjectId(collection)
-                }
-            }
+            dbAction.$pull = itemsUpdate
         }
 
-        return new Promise((resolve, reject) => {
-            this.getCollectionByItemType('items')
-                .findOneAndUpdate(
-                    { user: user, _id: ObjectId(item) },
-                    dbAction,
-                    { returnOriginal: false },
-                    (err, res) => {
-                        if (err) {
-                            console.log('addItemToItem', err)
-                            return reject(err)
-                        }
-
-                        // console.log('addItemToItem', res.value)
-                        return resolve(res.value || {})
-                    })
+        return this.updateOneItem({
+            collection: this.getCollectionByItemType('items'),
+            query: { user: user, _id: ObjectId(item) },
+            dbAction: dbAction,
+            returnOriginal: false
         })
     }
 
@@ -193,6 +168,25 @@ class Items {
                 )
         })
 
+    }
+
+    updateOneItem({ collection, query, dbAction, returnOriginal = false }) {
+        return new Promise((resolve, reject) => {
+            collection
+                .findOneAndUpdate(
+                    query,
+                    dbAction,
+                    { returnOriginal: returnOriginal },
+                    (err, res) => {
+                        if (err) {
+                            console.log('updateOneItem', err)
+                            return reject(err)
+                        }
+
+                        console.log('addItemToItem', res.value)
+                        return resolve(res.value || {})
+                    })
+        })
     }
 }
 
