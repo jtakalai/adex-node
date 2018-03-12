@@ -199,6 +199,13 @@ class Items {
             }
         }
 
+        if (item._type === constants.items.ItemsTypes.AdSlot.id) {
+            dbAction.$set._fallbackAdImg = item._fallbackAdImg
+            dbAction.$set._fallbackAdUrl = item._fallbackAdUrl
+
+            // TODO: Change slot avatar?
+        }
+
         return dbAction
     }
 
