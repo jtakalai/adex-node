@@ -192,7 +192,7 @@ class Items {
     }
 
     updateItemTypeDbAction({ item }) {
-        const dbAction = {
+        let dbAction = {
             $set: {
                 _description: item._description,
                 _modifiedOn: Date.now()
@@ -200,10 +200,9 @@ class Items {
         }
 
         if (item._type === constants.items.ItemsTypes.AdSlot.id) {
-            dbAction.$set._fallbackAdImg = item._fallbackAdImg
-            dbAction.$set._fallbackAdUrl = item._fallbackAdUrl
-
-            // TODO: Change slot avatar?
+            dbAction.$set['_fallbackAdImg'] = item._fallbackAdImg
+            dbAction.$set['_fallbackAdUrl'] = item._fallbackAdUrl
+            dbAction.$set['_meta.img'] = item._meta.img
         }
 
         return dbAction
