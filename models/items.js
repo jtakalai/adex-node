@@ -74,7 +74,8 @@ class Items {
     getUserItems(user, type) {
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
-                .find({ user: user, _type: parseInt(type), _deleted: false })
+                // Return all incl _deleted - there is filter on the dApp now
+                .find({ user: user, _type: parseInt(type) })
                 .toArray((err, result) => {
                     if (err) {
                         console.log('find items err', err)
