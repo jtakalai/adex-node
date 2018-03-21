@@ -57,25 +57,27 @@ class Items {
         })
     }
 
-    flagItemDeleted({ id, type, user }) {
+    // Temp not in use - just using _archived field at the moment
+    /*
+    flagItemDeleted({ id, type, user, deleted }) {
         return this.updateOneItem({
             collection: this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type]),
             query: { user: user, _id: ObjectId(id) },
             dbAction: {
                 $set: {
-                    _deleted: true,
+                    _deleted: deleted || true,
                     _modifiedOn: Date.now()
                 }
             },
             returnOriginal: false
         })
     }
+    */
 
     getUserItems(user, type) {
         return new Promise((resolve, reject) => {
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
-                // Return all incl _deleted - there is filter on the dApp now
-                .find({ user: user, _type: parseInt(type) })
+                .find({ user: user, _type: parseInt(type), _deleted: false })
                 .toArray((err, result) => {
                     if (err) {
                         console.log('find items err', err)
@@ -195,6 +197,7 @@ class Items {
     updateItemTypeDbAction({ item }) {
         let dbAction = {
             $set: {
+                _archived: item._archived,
                 _description: item._description,
                 _modifiedOn: Date.now()
             }
