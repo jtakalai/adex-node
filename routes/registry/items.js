@@ -78,7 +78,6 @@ router.get('/items/:id', (req, res) => {
 })
 
 // NOTE: Temp not use, now we are jus going to use _archived prop through PUT
-/*
 router.delete('/items', (req, res) => {
     Items.flagItemDeleted({ id: req.query.id, user: req.user, type: req.query.type })
         .then((items) => {
@@ -89,7 +88,6 @@ router.delete('/items', (req, res) => {
             res.status(500).send(err)
         })
 })
-*/
 
 const itemToItem = (req, res, action) => {
     Items.itemToItem({

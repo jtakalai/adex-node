@@ -58,7 +58,6 @@ class Items {
     }
 
     // Temp not in use - just using _archived field at the moment
-    /*
     flagItemDeleted({ id, type, user, deleted }) {
         return this.updateOneItem({
             collection: this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type]),
@@ -72,7 +71,6 @@ class Items {
             returnOriginal: false
         })
     }
-    */
 
     getUserItems(user, type) {
         return new Promise((resolve, reject) => {
