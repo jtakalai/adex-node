@@ -102,6 +102,10 @@ router.get('/bid-report', function (req, res) {
         .then(([allEvents, verifiedBid]) => {
             allEvents['bidId'] = bid
             allEvents['verifiedUniqueClicks'] = verifiedBid.clicksCount
+            allEvents['advertiser'] = verifiedBid._advertiser
+            allEvents['publisher'] = verifiedBid._publisher
+            allEvents['adUnitIpfs'] = verifiedBid._adUnit
+            allEvents['adSlotIpfs'] = verifiedBid._adSlot            
 
             report = allEvents
             return ipfs.addFileToIpfs(JSON.stringify(report))
