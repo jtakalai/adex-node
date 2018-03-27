@@ -5,7 +5,7 @@ const multer = require('multer')
 var redisClient = require('./../../redisInit')
 const router = express.Router()
 let { SIGN_TYPES } = require('adex-constants').exchange
-const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
+const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg, getAddrFromTrezorSignedMsg } = require('./../../services/web3/utils')
 
 const EXPIRY_INTERVAL = parseInt(process.env.AUTH_TIME || 0, 10) || (1000 * 60 * 60 * 24 * 30) // 30 days
 
@@ -22,6 +22,7 @@ router.post('/auth', (req, res) => {
         authToken = req.body.authToken,
         sigMode = parseInt(req.body.mode),
         typedData = req.body.typedData,
+        hashData = req.body.hashData,
         authRes = {} // NOTE: It is gonna be Promise because some recovery methods may not be synchronous 
 
     console.log('req.body', req.body)
@@ -37,10 +38,11 @@ router.post('/auth', (req, res) => {
             authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
             break
         case SIGN_TYPES.Trezor.id:
+            authRes = getAddrFromTrezorSignedMsg({ signature: signature, hash: hashData })
             // Auth Trezor
             break
 
-        default:
+        default:     
             break
     }
 
