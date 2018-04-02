@@ -6,8 +6,7 @@ const redis = require('redis');
 const scripto = require('redis-scripto');
 
 const redisClient = require('./../../redisInit')
-const { getAddrFromPersonalSignedMsg, getAddrFromEipTypedSignedMsg } = require('./../../services/web3/utils')
-const { SIGN_TYPES } = require('adex-constants').exchange
+const { getAddrFromSignedMsg } = require('./../../services/web3/utils')
 
 const bidsModel = require('./../../models/bids')
 
@@ -144,52 +143,31 @@ function submitClick(payload) {
 
     var signedData = [{ type: 'string', name: 'Event', value: JSON.stringify(payload) }]
     var msgParams = { data: signedData }
-    var authRes;
+    var authRes
 
-    switch (sigMode) {
-
-        case SIGN_TYPES.EthPersonal.id:
-            authRes = getAddrFromPersonalSignedMsg({ signature: signature, msg: JSON.stringify(payload) })
-            break
-        case SIGN_TYPES.Eip.id:
-            // Auth Metamask
-            //TEMP
-            authRes = getAddrFromEipTypedSignedMsg({ signature: signature, typedData: signedData })
-            break
-        case SIGN_TYPES.Trezor.id:
-            // Auth Trezor
-            break
-        default:
-            break
-    }
-
-    if (!!authRes.then) {
-        authRes
-            .then((recoveredAddr) => {
-                if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
-                    /* Additional entry in redis */
-                    redisClient.hset(['bid:' + payload.bid + ':users', payload.address, payload.time], (err, result) => {
-                        if (err) {
-                            console.log('[HSET] Add user entry failed failed ' + err);
-                        }
-                        if (result > 0)
-                            return bidsModel.addClicksToBid({ id: payload.bid });
-                        else
-                            console.log('Click event from ' + payload.address + ' already in DB');
-                    })
-                } else {
-                    throw 'No sig match'
-                }
-            })
-            .then((res) => {
-                console.log('Successfully verified signature, writing to MongoDB', res);
-            })
-            .catch((err) => {
-                console.log('Error verifying signature ' + err)
-            });
-    } else {
-        console.log('Error verifying signature - no sigMode')
-    }
+    getAddrFromSignedMsg({ sigMode, signature, typedData: signedData, msg: JSON.stringify(payload) })
+        .then((recoveredAddr) => {
+            if (recoveredAddr.toLowerCase() === payload.address.toLowerCase()) {
+                /* Additional entry in redis */
+                redisClient.hset(['bid:' + payload.bid + ':users', payload.address, payload.time], (err, result) => {
+                    if (err) {
+                        console.log('[HSET] Add user entry failed failed ' + err);
+                    }
+                    if (result > 0)
+                        return bidsModel.addClicksToBid({ id: payload.bid });
+                    else
+                        console.log('Click event from ' + payload.address + ' already in DB');
+                })
+            } else {
+                throw 'No sig match'
+            }
+        })
+        .then((res) => {
+            console.log('Successfully verified signature, writing to MongoDB', res);
+        })
+        .catch((err) => {
+            console.log('Error verifying signature ' + err)
+        })
 }
 
 router.post('/submit', function (request, response) {

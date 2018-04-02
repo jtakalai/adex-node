@@ -2,6 +2,7 @@ const sigUtil = require('eth-sig-util')
 const ethereumjs = require('ethereumjs-util')
 const { toBuffer, ecrecover, pubToAddress } = ethereumjs
 const { web3, web3Utils } = require('./ADX')
+let { SIGN_TYPES } = require('adex-constants').exchange
 
 const getAddrFromPersonalSignedMsg = ({ signature, msg }) => {
     return new Promise((resolve, reject) => {
@@ -58,8 +59,22 @@ const getAddrFromTrezorSignedMsg = ({ signature, hash }) => {
     })
 }
 
+getAddrFromSignedMsg = ({sigMode, signature, hash, typedData, msg }) => {
+    switch (sigMode) {
+
+        case SIGN_TYPES.EthPersonal.id:
+            // Ledger
+            return getAddrFromPersonalSignedMsg({ signature: signature, msg: msg })
+        case SIGN_TYPES.Eip.id:
+            // Metamask
+            return getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
+        case SIGN_TYPES.Trezor.id:
+            // Trezor
+            return getAddrFromTrezorSignedMsg({ signature: signature, hash: hash })
+        default:     
+            return Promise.reject('Invalid signature mode!')
+    }
+}
 module.exports = {
-    getAddrFromPersonalSignedMsg: getAddrFromPersonalSignedMsg,
-    getAddrFromEipTypedSignedMsg: getAddrFromEipTypedSignedMsg,
-    getAddrFromTrezorSignedMsg: getAddrFromTrezorSignedMsg
+    getAddrFromSignedMsg: getAddrFromSignedMsg
 }

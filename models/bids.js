@@ -6,7 +6,7 @@ const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 const Items = require('./items')
 const { Bid } = require('adex-models')
-const { getAddrFromEipTypedSignedMsg } = require('./../services/web3/utils')
+const { getAddrFromSignedMsg } = require('./../services/web3/utils')
 
 const bidsCollection = db.collection('bids')
 const { BID_STATES } = constants.exchange
@@ -21,8 +21,9 @@ class Bids {
         return new Promise((resolve, reject) => {
             let bidInst = new Bid(bid)
             let typedData = bidInst.typed
+            let signature = bidInst.signature
 
-            getAddrFromEipTypedSignedMsg({ signature: bidInst.signature.signature, typedData: bidInst.typed })
+            getAddrFromSignedMsg({ sigMode: signature.sig_mode, signature: signature.signature, typedData: bidInst.typed, hash: signature.hash })
                 .then((signAddr) => {
 
                     if (signAddr.toLowerCase() === user.toLowerCase()) {
