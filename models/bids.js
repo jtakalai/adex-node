@@ -50,6 +50,7 @@ class Bids {
 
                                 //Db only
                                 bidInst.sizeAndType = unit.sizeAndType // index
+                                bidInst.clicksCount = 0 // Ensure it is 0 on creation 
 
                                 if (bidInst.id !== bidInst.signature.hash) {
                                     return reject('Invalid bid hash (id)')

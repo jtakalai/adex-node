@@ -26,7 +26,7 @@ router.post('/auth', (req, res) => {
 
     console.log('req.body', req.body)
 
-    getAddrFromSignedMsg({ sigMode, signature, hash, typedData, msg: authToken })
+    getAddrFromSignedMsg({ sigMode, signature, hash, typedData })
         .then((recoveredAddr) => {
 
             console.log('recoveredAddr', recoveredAddr)

@@ -4,11 +4,15 @@ const { toBuffer, ecrecover, pubToAddress } = ethereumjs
 const { web3, web3Utils } = require('./ADX')
 let { SIGN_TYPES } = require('adex-constants').exchange
 
-const getAddrFromPersonalSignedMsg = ({ signature, msg }) => {
+const getAddrFromPersonalSignedMsg = ({ signature, hash, msg }) => {
     return new Promise((resolve, reject) => {
+        // NOTE: When we use LEDGER we sign typed data and the 'hash' from it
+        // Currently we use personalMessahe hash for adview signature and it comes as msg
+        // TODO: make it consistent
+        const recoverFrom = hash || web3.eth.accounts.hashMessage(msg)
         let user
         try {
-            user = web3.eth.accounts.recover(web3.eth.accounts.hashMessage(msg), signature)
+            user = web3.eth.accounts.recover(recoverFrom, signature)
             resolve(user)
         } catch (err) {
             reject(err)
@@ -59,19 +63,19 @@ const getAddrFromTrezorSignedMsg = ({ signature, hash }) => {
     })
 }
 
-getAddrFromSignedMsg = ({sigMode, signature, hash, typedData, msg }) => {
+getAddrFromSignedMsg = ({ sigMode, signature, hash, typedData, msg }) => {
     switch (sigMode) {
 
         case SIGN_TYPES.EthPersonal.id:
             // Ledger
-            return getAddrFromPersonalSignedMsg({ signature: signature, msg: msg })
+            return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg })
         case SIGN_TYPES.Eip.id:
             // Metamask
             return getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
         case SIGN_TYPES.Trezor.id:
             // Trezor
             return getAddrFromTrezorSignedMsg({ signature: signature, hash: hash })
-        default:     
+        default:
             return Promise.reject('Invalid signature mode!')
     }
 }
