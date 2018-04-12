@@ -30,6 +30,7 @@ router.post('/auth', (req, res) => {
         .then((recoveredAddr) => {
 
             recoveredAddr = recoveredAddr.toLowerCase()
+            console.log('recoveredAddr', recoveredAddr)
             // console.log('User id ' + userid + ', token ' + authToken + ' signature ' + signature)
 
             if (recoveredAddr === userid.toLowerCase()) {

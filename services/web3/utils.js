@@ -13,9 +13,9 @@ const getAddrFromPersonalSignedMsg = ({ signature, hash, msg }) => {
         let user
         try {
             user = web3.eth.accounts.recover(recoverFrom, signature)
-            resolve(user)
+            return resolve(user)
         } catch (err) {
-            reject(err)
+            return reject(err)
         }
     })
 }
@@ -29,9 +29,9 @@ const getAddrFromEipTypedSignedMsg = ({ signature, typedData }) => {
                 data: typedData,
                 sig: signature
             })
-            resolve(user)
+            return resolve(user)
         } catch (err) {
-            reject(err)
+            return reject(err)
         }
     })
 }
@@ -51,19 +51,22 @@ const getAddrFromTrezorSignedMsg = ({ signature, hash }) => {
         let user
         try {
             let msg = web3Utils.soliditySha3('\x19Ethereum Signed Message:\n\x20', hash)
+            console.log('msg', msg)
             let sig = getRsvFromSig(signature)
             let pubKey = ecrecover(toBuffer(msg), sig.v, toBuffer(sig.r), toBuffer(sig.s))
             let addr = pubToAddress(pubKey)
             addr = '0x' + addr.toString('hex')
 
-            resolve(addr)
+            return resolve(addr)
         } catch (err) {
-            reject(err)
+            return reject(err)
         }
     })
 }
 
 getAddrFromSignedMsg = ({ sigMode, signature, hash, typedData, msg }) => {
+
+    console.log('sigMode', sigMode)
     switch (sigMode) {
 
         case SIGN_TYPES.EthPersonal.id:
