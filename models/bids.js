@@ -37,7 +37,7 @@ class Bids {
                                 bidInst.state = BID_STATES.DoesNotExist.id
                                 bidInst.createdOn = Date.now() // bidInst.opened ?
                                 bidInst.adUnitId = ObjectId(bidInst.adUnitId)
-                                bidInst.advertiser = user
+                                bidInst.advertiser = user.toLowerCase()
                                 /*  NOTE: Ensure integer or string values
                                 *   Maybe is safer as strings but that way some queries will be much faster 
                                 *   The amount will be string
@@ -88,7 +88,7 @@ class Bids {
 
     getAdUnitBids({ user, adUnitId }) {
         let query = {
-            _advertiser: user,
+            _advertiser: user.toLowerCase(),
             _adUnitId: ObjectId(adUnitId)
         }
 

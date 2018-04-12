@@ -29,10 +29,10 @@ router.post('/auth', (req, res) => {
     getAddrFromSignedMsg({ sigMode, signature, hash, typedData })
         .then((recoveredAddr) => {
 
-            console.log('recoveredAddr', recoveredAddr)
+            recoveredAddr = recoveredAddr.toLowerCase()
             // console.log('User id ' + userid + ', token ' + authToken + ' signature ' + signature)
 
-            if (recoveredAddr.toLowerCase() === userid.toLowerCase()) {
+            if (recoveredAddr === userid.toLowerCase()) {
                 redisClient.set('session:' + signature, JSON.stringify({ 'user': recoveredAddr, 'authToken': authToken, 'sigMode': sigMode }), (err, result) => {
                     if (err != null) {
                         console.log('Error saving session data for user ' + recoveredAddr + ' :' + err);
