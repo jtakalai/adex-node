@@ -140,6 +140,22 @@ class Bids {
         return this.getBids(query, project)
     }
 
+    getPublisherBids({ user }) {
+        const query = {
+            _publisher: user
+        }
+
+        return this.getBids(query)
+    }
+
+    getAdvertiserBids({ user }) {
+        const query = {
+            _advertiser: user
+        }
+
+        return this.getBids(query)
+    }
+
     getBids(query, project = {}) {
         return new Promise((resolve, reject) => {
             bidsCollection

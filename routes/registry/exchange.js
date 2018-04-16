@@ -38,6 +38,10 @@ router.get('/bids', (req, res) => {
         action = Bids.getSlotBids({ user: user, adSlot: query.slot })
     } else if (query.sizeAndType || query.sizeAndType === '0') {
         action = Bids.getNotAcceptedBidsBySizeAndType({ sizeAndType: query.sizeAndType, user: user })
+    } else if (query.side === 'advertiser') {
+        action = Bids.getAdvertiserBids({ user: user })
+    } else if (query.side === 'publisher') {
+        action = Bids.getPublisherBids({ user: user })
     }
 
     action
@@ -83,7 +87,7 @@ const getReportsStats = (bid) => {
     })
 }
 
-router.get('/bid-report', function (req, res) {
+router.get('/bid-report', (req, res) => {
     const bid = req.query.bidId
 
     if (!bid) {
@@ -105,7 +109,7 @@ router.get('/bid-report', function (req, res) {
             allEvents['advertiser'] = verifiedBid._advertiser
             allEvents['publisher'] = verifiedBid._publisher
             allEvents['adUnitIpfs'] = verifiedBid._adUnit
-            allEvents['adSlotIpfs'] = verifiedBid._adSlot            
+            allEvents['adSlotIpfs'] = verifiedBid._adSlot
 
             report = allEvents
             return ipfs.addFileToIpfs(JSON.stringify(report))
