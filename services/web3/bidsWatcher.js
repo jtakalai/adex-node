@@ -65,7 +65,8 @@ const checkEvents = () => {
         .then(() => {
             syncEventsLoop()
         })
-        .catch(() => {
+        .catch((err) => {
+            console.log('err', err)
             syncEventsLoop()
         })
 }
@@ -163,28 +164,30 @@ const mapLogBidCompleted = (ev) => {
 
 // event LogBidConfirmed(bytes32 bidId, address advertiserOrPublisher, bytes32 report);
 const mapLogBidConfirmed = (ev) => {
-    const advertiserOrPublisher = ev.returnValues.advertiserOrPublisher.toLowerCase()
-    const report = ev.returnValues
+    const returnValues = ev.returnValues
+    const advertiserOrPublisher = returnValues.advertiserOrPublisher.toLowerCase()
+    const report = helpers.from32BytesHexIpfs(returnValues.report)
 
-    return [
+    return operation = [
         {
             updateOne: {
-                filter: { _id: returnValues.bidId, _publisher: advertiserOrPublisher },
+                filter: { _id: ev.returnValues.bidId, _publisher: advertiserOrPublisher },
                 update: {
                     $set: {
-                        _publisherConfirmation: helpers.from32BytesHexIpfs(report)
+                        _publisherConfirmation: report
                     },
                     $addToSet: {
                         confirmedEvents: ev
                     }
                 }
             }
-        }, {
+        },
+        {
             updateOne: {
                 filter: { _id: returnValues.bidId, _advertiser: advertiserOrPublisher },
                 update: {
                     $set: {
-                        _advertiserConfirmation: helpers.from32BytesHexIpfs(report)
+                        _advertiserConfirmation: report
                     },
                     $addToSet: {
                         confirmedEvents: ev
