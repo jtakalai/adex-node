@@ -4,15 +4,17 @@ const { toBuffer, ecrecover, pubToAddress } = ethereumjs
 const { web3, web3Utils } = require('./ADX')
 let { SIGN_TYPES } = require('adex-constants').exchange
 
-const getAddrFromPersonalSignedMsg = ({ signature, hash, msg }) => {
+const getAddrFromPersonalSignedMsg = ({ signature, hash, msg, prefixed = false }) => {
     return new Promise((resolve, reject) => {
         // NOTE: When we use LEDGER we sign typed data and the 'hash' from it
         // Currently we use personalMessahe hash for adview signature and it comes as msg
         // TODO: make it consistent
         const recoverFrom = hash || web3.eth.accounts.hashMessage(msg)
+        const prefixed = !hash || prefixed //NOTE: TEMP - When signed from adex-view
+
         let user
         try {
-            user = web3.eth.accounts.recover(recoverFrom, signature)
+            user = web3.eth.accounts.recover(recoverFrom, signature, prefixed)
             return resolve(user)
         } catch (err) {
             return reject(err)
@@ -71,7 +73,7 @@ getAddrFromSignedMsg = ({ sigMode, signature, hash, typedData, msg }) => {
 
         case SIGN_TYPES.EthPersonal.id:
             // Ledger
-            return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg })
+            return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg: msg })
         case SIGN_TYPES.Eip.id:
             // Metamask
             return getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
