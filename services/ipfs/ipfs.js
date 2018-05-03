@@ -1,6 +1,6 @@
 const ipfsAPI = require('ipfs-api')
-const ipfsHost = process.env.IPFSHOST || 'ipfs.infura.io'
-const ipfsPort = process.env.IPFSPORT || '5001'
+const ipfsHost = process.env.IPFSHOST || 'ipfs.adex.network'
+const ipfsPort = process.env.IPFSPORT || '8443'
 const ipfsProtocol = process.env.IPFSPROTOCOL || 'https'
 
 const ipfs = ipfsAPI(ipfsHost, ipfsPort, { protocol: ipfsProtocol })

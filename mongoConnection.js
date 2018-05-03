@@ -6,7 +6,7 @@ var dbPort = process.env.MONGO_PORT || 27017;
 var dbPassword = process.env.MONGO_PASSWD || 'oCeigu2thah7zaepeer8Lohhahng2iod';
 var dbUser = process.env.MONGO_USER || 'admin';
 var dbPrimary = process.env.MONGO_PRIMARY || 'testcluster0-shard-00-00-xy29f.mongodb.net'
-var dbSecondary1 = process.env.MONGO_SECONDARY1 || 'testcluster0-shard-00-01-xy29f.mongodb.net'
+var dbSecondary1 = process.env.MONGO_SECONDARY1 || 'testcluster0-shard-00-02-xy29f.mongodb.net'
 var dbSecondary2 = process.env.MONGO_SECONDARY2 || 'testcluster0-shard-00-02-xy29f.mongodb.net'
 var dbReplicaSet = process.env.MONGO_REPLICASET || 'TestCluster0-shard-0'
 

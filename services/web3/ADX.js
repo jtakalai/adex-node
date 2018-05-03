@@ -26,7 +26,7 @@ let cfg
 if (process.env.NODE_ENV === 'production') {
     cfg = mainnetCfg
 } else {
-    cfg = testrpcCfg
+    cfg = mainnetCfg
 }
 
 let provider = new Web3.providers.HttpProvider(cfg.node)
@@ -34,6 +34,8 @@ let web3 = new Web3(provider)
 
 let token = new web3.eth.Contract(tokenAbi, cfg.addr.token)
 let exchange = new web3.eth.Contract(exchangeAbi, cfg.addr.exchange)
+
+console.log(process.env.NODE_ENV + ': ' + process.env.ADX_EXCHANGE_ADDR + ', ' + cfg.addr.exchange)
 
 module.exports = {
     web3: web3,

@@ -2,9 +2,9 @@ const redis = require('redis')
 const tls = require('tls')
 const fs = require('fs')
 
-var dbPort = process.env.REDIS_PORT || 6379;
-var dbHost = process.env.REDIS_HOST || '127.0.0.1';
-var dbPassword = process.env.REDIS_PASSWD || 'zo4ohJao0yaav4Xah8oogiqu1Johkeig';
+var dbPort = process.env.REDIS_PORT || 15900;
+var dbHost = process.env.REDIS_HOST || 'redis-15900.c12.us-east-1-4.ec2.cloud.redislabs.com';
+var dbPassword = process.env.REDIS_PASSWD || 'Ohgh5ohzahvoox6ahleedieg';
 var dbUseSSL = process.env.REDIS_SSL || false;
 var dbKeyFile = process.env.REDIS_KEY || '';
 var dbCertFile = process.env.REDIS_CERT || '';

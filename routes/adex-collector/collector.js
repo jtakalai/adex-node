@@ -9,6 +9,7 @@ const redisClient = require('./../../redisInit')
 const { getAddrFromSignedMsg } = require('./../../services/web3/utils')
 
 const bidsModel = require('./../../models/bids')
+const { promisify } = require('util')
 
 const pid = process.pid;
 
@@ -34,27 +35,65 @@ function redisLoadScript() {
     scriptManager.loadFromFile('timefilter', './zcount.lua');
 }
 
-const getEventsByInterval = ({ bid, interval }) => {
-    redisClient.multi([['hget', 'time:' + bid + ':click', interval],
-    ['hget', 'time:' + bid + ':loaded', interval],
-    ['hget', 'time:' + bid + ':leave', interval]
-    ]).exec(function (err, replies) {
-        if (err) {
-            res.status(401).send({ error: 'Internal server error' });
-            console.log('Redis request error: ' + err);
-        } else {
-            var whenEnd = Date.now();
-            console.log('hget request replies: ' + replies);
-            var results = {
-                'click': parseInt(replies[0], 10),
-                'loaded': parseInt(replies[1], 10),
-                'leave': parseInt(replies[2], 10),
-            };
-            response.json(results);
-            console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
-        }
-    });
+const getLiveStats = ({ now, bid, start, end }) => {
+    if (true || (now - start) < EXPIRY_INTERVAL_LIVE) {
+        const startTimeInterval = Math.floor(start / TIME_INTERVAL_LIVE)
+        const endIntervalTime = Math.floor(end / TIME_INTERVAL_LIVE)
 
+        let currentInterval = startTimeInterval
+        const actions = []
+        const timeIntervals = []
+        while (currentInterval != endIntervalTime) {
+            actions.push(['hget', timeIntervalHash({ bid, type: 'click', timeType: 'live' }), currentInterval],
+                ['hget', timeIntervalHash({ bid, type: 'loaded', timeType: 'live' }), currentInterval])
+            timeIntervals.push(currentInterval)
+
+            currentInterval = currentInterval + 1
+        }
+
+        // console.log('actions', actions)
+        // console.log('timeIntervals', timeIntervals)
+
+        return {
+            actions: actions,
+            timeIntervals: timeIntervals
+        }
+    }
+
+    return {
+        actions: [],
+        timeIntervals: []
+    }
+}
+
+const mapLiveStatsResults = ({ replies, timeIntervals, intervalType, interval }) => {
+    const mapped = timeIntervals.reduce((memo, int, index) => {
+        memo.push({
+            timeInterval: int,
+            interval: interval,
+            intervalType: intervalType,
+            clicks: replies[index * 2],
+            loaded: replies[(index * 2) + 1]
+        })
+
+        return memo
+    }, [])
+
+    // console.log(mapped)
+
+    return mapped
+}
+
+// TODO: Promisify 
+const getEventsByPeriod = ({ bid, start, end, cb }) => {
+    const now = Date.now()
+    const data = getLiveStats({ now, bid, start, end })
+
+    redisClient.multi(data.actions)
+        .exec((err, replies) => {
+            const res = mapLiveStatsResults({ timeIntervals: data.timeIntervals, replies: replies, intervalType: 'live', interval: TIME_INTERVAL_LIVE })
+            cb(res)
+        })
 }
 
 function registerEndpoint() {
@@ -89,9 +128,9 @@ function registerEndpoint() {
                     res.status(401).send({ error: 'Internal server error' });
                     console.log('Redis request error: ' + err);
                 } else {
-                    var whenEnd = Date.now();
+                    let whenEnd = Date.now();
                     // console.log('hget request replies: ' + replies)
-                    var results = {
+                    let results = {
                         'click': parseInt(replies[0], 10),
                         'loaded': parseInt(replies[1], 10),
                         'leave': parseInt(replies[2], 10),
@@ -100,6 +139,15 @@ function registerEndpoint() {
                     console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
                 }
             });
+        } else if (request.query.start && request.query.end) {
+            getEventsByPeriod({
+                bid: bid, start: request.query.start, end: request.query.end, cb: (res) => {
+                    let whenEnd = Date.now();
+                    console.log('getEventsByPeriod request took ' + (whenEnd - whenStart) + ' milliseconds');
+                    response.json(res)
+                }
+            })
+
         } else {
             var whenStart = Date.now();
             if (request.query.start === undefined)
