@@ -12,10 +12,19 @@ const bidsModel = require('./../../models/bids')
 
 const pid = process.pid;
 
+const MSECS_IN_SEC = 1000
 
-var scriptManager = null;
-const EXPIRY_INTERVAL = 2678400;
-const MSECS_IN_SEC = 1000;
+const TIME_INTERVAL_LIVE = 5 * 60 * MSECS_IN_SEC // 5 min 
+const EXPIRY_INTERVAL_LIVE = 24 * 60 * 60 * MSECS_IN_SEC // 24 hours 
+
+const TIME_INTERVAL_HOURLY = 60 * 60 * MSECS_IN_SEC // 1 hour 
+const EXPIRY_INTERVAL_HOURLY = 31 * 60 * 60 * MSECS_IN_SEC // 31 days 
+
+const TIME_INTERVAL_DAILY = 24 * 60 * 60 * MSECS_IN_SEC // 24 hours
+const EXPIRY_INTERVAL_DAILY = 0 // NO EXPIRY
+
+var scriptManager = null
+
 
 redisLoadScript();
 registerEndpoint();
@@ -25,22 +34,42 @@ function redisLoadScript() {
     scriptManager.loadFromFile('timefilter', './zcount.lua');
 }
 
+const getEventsByInterval = ({ bid, interval }) => {
+    redisClient.multi([['hget', 'time:' + bid + ':click', interval],
+    ['hget', 'time:' + bid + ':loaded', interval],
+    ['hget', 'time:' + bid + ':leave', interval]
+    ]).exec(function (err, replies) {
+        if (err) {
+            res.status(401).send({ error: 'Internal server error' });
+            console.log('Redis request error: ' + err);
+        } else {
+            var whenEnd = Date.now();
+            console.log('hget request replies: ' + replies);
+            var results = {
+                'click': parseInt(replies[0], 10),
+                'loaded': parseInt(replies[1], 10),
+                'leave': parseInt(replies[2], 10),
+            };
+            response.json(results);
+            console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
+        }
+    });
+
+}
+
 function registerEndpoint() {
     console.log('[' + pid + '] ' + 'Register endpoint /events');
     router.get('/events', function (request, response) {
         var whenStart = Date.now();
-        var bid = {};
+        var bid = request.query.bid;
 
-        try {
-            bid = JSON.parse(request.query.bid);
-        } catch (err) {
-            response.status(400).send({ error: 'Invalid bid id' });
-            return
+        if (!bid) {
+            return response.status(400).send({ error: 'Invalid bid id' })
         }
 
         // console.log('Received endpoint request, data ' + endpoints[which] +
         // ' start at ' + request.query.start + ' end at ' + request.query.end);
-        if (request.query.start === undefined && request.query.end === undefined && request.query.interval == undefined) {
+        if ((request.query.start === undefined) && (request.query.end === undefined) && (request.query.interval == undefined)) {
             redisClient.zcard(['bid:' + bid], (err, result) => {
                 if (err) {
                     res.status(401).send({ error: 'Internal server error' });
@@ -53,7 +82,7 @@ function registerEndpoint() {
             });
         } else if (request.query.interval !== undefined) {
             redisClient.multi([['hget', 'time:' + bid + ':click', request.query.interval],
-            ['hget', 'time:' + bid + ':impression', request.query.interval],
+            ['hget', 'time:' + bid + ':loaded', request.query.interval],
             ['hget', 'time:' + bid + ':leave', request.query.interval]
             ]).exec(function (err, replies) {
                 if (err) {
@@ -61,9 +90,10 @@ function registerEndpoint() {
                     console.log('Redis request error: ' + err);
                 } else {
                     var whenEnd = Date.now();
+                    // console.log('hget request replies: ' + replies)
                     var results = {
                         'click': parseInt(replies[0], 10),
-                        'impression': parseInt(replies[1], 10),
+                        'loaded': parseInt(replies[1], 10),
                         'leave': parseInt(replies[2], 10),
                     };
                     response.json(results);
@@ -93,6 +123,55 @@ function registerEndpoint() {
     });
 }
 
+const timeIntervalHash = ({ bid, type, timeType }) => {
+    return 'time:' + bid + ':' + type + ':' + timeType
+}
+
+const timeIntervalAction = ({ time, interval, bid, type, timeType, expInterval }) => {
+    const hash = timeIntervalHash({ bid, type, timeType })
+    const timeInterval = Math.floor(time / interval)
+
+    return ['hincrby', hash, timeInterval, 1]
+}
+
+const timeIntervalExpireAction = ({ time, interval, bid, type, timeType, expInterval }) => {
+    const hash = timeIntervalHash({ bid, type, timeType })
+    const expirySeconds = Math.floor((interval + expInterval) / MSECS_IN_SEC)
+
+    return ['expire', hash, expirySeconds]
+}
+
+const addAllByInterval = (data) => {
+    const actions = data.map(action => {
+        return timeIntervalAction(action)
+    })
+
+    redisClient.multi(actions)
+        .exec((err, replies) => {
+            if (err) {
+                console.log('[HINCRBY] Add multi entries timestamp failed:' + err)
+            } else {
+                const expireActions = replies.reduce((memo, rep, index) => {
+                    const actionData = data[index]
+
+                    if (actionData.expInterval && rep < 2) {
+                        memo.push(timeIntervalExpireAction(actionData))
+                    }
+
+                    return memo
+                }, [])
+
+                redisClient.multi(expireActions)
+                    .exec((err, replies) => {
+                        if (err) {
+                            console.log('[EXPIRE] multi set entry expiry time failed ' + err)
+                        }
+                    })
+            }
+        })
+
+}
+
 function submitEntry(payload, response) {
     redisClient.zadd(['bid:' + payload.bid, payload.time,
     JSON.stringify({
@@ -115,23 +194,13 @@ function submitEntry(payload, response) {
         submitClick(payload);
     }
 
-    var timeInterval = Math.floor(payload.time / (60 * MSECS_IN_SEC));
-    redisClient.hincrby(['time:' + payload.bid + ':' + payload.type, timeInterval, 1], (err, result) => {
-        if (err) {
-            console.log('[HINCRBY] Add entry timestamp failed (' + timeInterval + ') ' + err);
-        } else {
-            if (result < 2) {
-                var date = new Date();
-                var expiryTime = (timeInterval + 1) * 60 * MSECS_IN_SEC +
-                    EXPIRY_INTERVAL * MSECS_IN_SEC - date.getTime();
-                var expirySeconds = Math.floor(expiryTime / 1000);
-                redisClient.expire(['time:' + payload.bid + ':' + payload.type, expirySeconds], (err, res) => {
-                    if (err)
-                        console.log('[EXPIRE] set entry expiry time failed ' + err);
-                });
-            }
-        }
-    });
+    const intervalRedisTxData = [
+        { time: payload.time, interval: TIME_INTERVAL_LIVE, bid: payload.bid, type: payload.type, timeType: 'live', expInterval: EXPIRY_INTERVAL_LIVE },
+        { time: payload.time, interval: TIME_INTERVAL_HOURLY, bid: payload.bid, type: payload.type, timeType: 'hourly', expInterval: EXPIRY_INTERVAL_HOURLY },
+        { time: payload.time, interval: TIME_INTERVAL_DAILY, bid: payload.bid, type: payload.type, timeType: 'daily', expInterval: EXPIRY_INTERVAL_DAILY }
+    ]
+
+    addAllByInterval(intervalRedisTxData)
 }
 
 function submitClick(payload) {
@@ -173,6 +242,7 @@ function submitClick(payload) {
 router.post('/submit', function (request, response) {
     let payload = {}
     let body = request.body || {}
+    console.log('submit body', body)
     if (body.signature &&
         body.sigMode !== undefined &&
         body.type &&

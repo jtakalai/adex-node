@@ -16,17 +16,18 @@ router.get('/auth', (req, res) => {
 })
 
 router.post('/auth', (req, res) => {
-    var userid = req.body.userid,
+    let userid = req.body.userid,
         signature = req.body.signature,
         authToken = req.body.authToken,
         sigMode = parseInt(req.body.mode),
         typedData = req.body.typedData,
         hash = req.body.hash,
+        prefixed = req.body.prefixed,
         authRes = {} // NOTE: It is gonna be Promise because some recovery methods may not be synchronous 
 
     console.log('req.body', req.body)
 
-    getAddrFromSignedMsg({ sigMode, signature, hash, typedData })
+    getAddrFromSignedMsg({ sigMode, signature, hash, typedData, msg: authToken, prefixed })
         .then((recoveredAddr) => {
 
             recoveredAddr = recoveredAddr.toLowerCase()
