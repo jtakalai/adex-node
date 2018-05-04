@@ -31,8 +31,9 @@ const INTERVAL_TYPE = {
     daily: 'daily'
 }
 
-var scriptManager = null
+const EVENT_TYPES = ['click', 'loaded', 'uniqueClick']
 
+var scriptManager = null
 
 redisLoadScript();
 registerEndpoint();
@@ -50,8 +51,10 @@ const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) =
     const actions = []
     const timeIntervals = []
     while (currentInterval != endIntervalTime) {
-        actions.push(['hget', timeIntervalHash({ bid, type: 'click', timeType: intervalType }), currentInterval],
-            ['hget', timeIntervalHash({ bid, type: 'loaded', timeType: intervalType }), currentInterval])
+        EVENT_TYPES.forEach((evType) => {
+            actions.push(['hget', timeIntervalHash({ bid, type: evType, timeType: intervalType }), currentInterval])
+        })
+
         timeIntervals.push(currentInterval)
 
         currentInterval = currentInterval + 1
@@ -72,8 +75,9 @@ const mapStatsResults = ({ replies, timeIntervals, intervalType, interval }) => 
             timeInterval: int,
             interval: interval,
             intervalType: intervalType,
-            clicks: replies[index * 2],
-            loaded: replies[(index * 2) + 1]
+            clicks: replies[index * EVENT_TYPES.length],
+            loaded: replies[(index * EVENT_TYPES.length) + 1],
+            uniqueClick: replies[(index * EVENT_TYPES.length) + 2],
         })
 
         return memo
@@ -338,10 +342,6 @@ function submitEntry(payload, response) {
         }
     })
 
-    if (payload.type === 'click') {
-        submitClick(payload);
-    }
-
     const dataCommon = {
         bid: payload.bid,
         time: payload.time,
@@ -354,10 +354,14 @@ function submitEntry(payload, response) {
         { ...dataCommon, interval: TIME_INTERVAL_DAILY, timeType: INTERVAL_TYPE.daily, expInterval: EXPIRY_INTERVAL_DAILY }
     ]
 
+    if (payload.type === 'click') {
+        submitClick({ payload, intervalRedisTxData })
+    }
+
     addAllByInterval(intervalRedisTxData)
 }
 
-function submitClick(payload) {
+function submitClick({ payload, intervalRedisTxData }) {
     // special handling for clicks - verify signature and send to Mongo
     var signature = payload.signature
     var sigMode = payload.sigMode
@@ -374,12 +378,21 @@ function submitClick(payload) {
                 /* Additional entry in redis */
                 redisClient.hset(['bid:' + payload.bid + ':users', payload.address, payload.time], (err, result) => {
                     if (err) {
-                        console.log('[HSET] Add user entry failed failed ' + err);
+                        console.log('[HSET] Add user entry failed failed ' + err)
                     }
-                    if (result > 0)
-                        return bidsModel.addClicksToBid({ id: payload.bid });
-                    else
-                        console.log('Click event from ' + payload.address + ' already in DB');
+                    if (result > 0) {
+                        addAllByInterval(intervalRedisTxData.map((data) => {
+                            const mapped = { ...data }
+                            mapped.type = 'unique-click'
+
+                            return mapped
+                        }))
+
+                        return bidsModel.addClicksToBid({ id: payload.bid })
+                    }
+                    else {
+                        console.log('Click event from ' + payload.address + ' already in DB')
+                    }
                 })
             } else {
                 throw 'No sig match'
