@@ -66,7 +66,7 @@ const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) =
     }
 }
 
-const mapLiveStatsResults = ({ replies, timeIntervals, intervalType, interval }) => {
+const mapStatsResults = ({ replies, timeIntervals, intervalType, interval }) => {
     const mapped = timeIntervals.reduce((memo, int, index) => {
         memo.push({
             timeInterval: int,
@@ -112,27 +112,100 @@ const getEventsByPeriod = ({ bid, start, end, cb }) => {
 
     const data = liveData.actions.concat(hourlyData.actions, dailyData.actions)
 
-    redisClient.multi(data)
+    const bidData = {
+        actions: data,
+        liveData: liveData,
+        hourlyData: hourlyData,
+        dailyData: dailyData
+    }
+
+    return bidData
+}
+
+const mapBidsStatsResults = ({ bids, data, replies }) => {
+    const mapped = bids.reduce((memo, bid, index) => {
+
+        const liveData = data.liveData[index]
+        const hourlyData = data.hourlyData[index]
+        const dailyData = data.dailyData[index]
+
+        const currentLiveDataIndex = memo.liveDataIndex
+        const nextLiveDataIndex = currentLiveDataIndex + (liveData.actions.length - 1)
+
+        const currentHourlyDataIndex = nextLiveDataIndex + 1
+        const nextHourlyDataIndex = nextLiveDataIndex + (hourlyData.actions.length - 1)
+
+        const currentDailyDataIndex = nextHourlyDataIndex + 1
+        const nextDailyDataIndex = nextHourlyDataIndex + (dailyData.actions.length - 1)
+
+        const bidData = {
+            bidId: bid,
+            [INTERVAL_TYPE.live]: mapStatsResults({
+                timeIntervals: liveData.timeIntervals,
+                replies: replies.slice(currentLiveDataIndex, nextLiveDataIndex),
+                intervalType: INTERVAL_TYPE.live,
+                interval: TIME_INTERVAL_LIVE
+            }),
+            [INTERVAL_TYPE.hourly]: mapStatsResults({
+                timeIntervals: hourlyData.timeIntervals,
+                replies: replies.slice(currentHourlyDataIndex, nextHourlyDataIndex),
+                intervalType: INTERVAL_TYPE.hourly,
+                interval: TIME_INTERVAL_LIVE
+            }),
+            [INTERVAL_TYPE.daily]: mapStatsResults({
+                timeIntervals: dailyData.timeIntervals,
+                replies: replies.slice(currentDailyDataIndex, nextDailyDataIndex),
+                intervalType: INTERVAL_TYPE.daily,
+                interval: TIME_INTERVAL_LIVE
+            })
+        }
+
+        memo.data.push(bidData)
+        memo.liveDataIndex = nextDailyDataIndex + 1
+
+        return memo
+
+    }, { data: [], liveDataIndex: 0 })
+
+    return mapped
+}
+
+const getEventsForBidsByPeriod = ({ bids, start, end, cb }) => {
+    const data = {
+        actions: [],
+        liveData: [],
+        hourlyData: [],
+        dailyData: []
+    }
+
+    bids.forEach(bid => {
+        const bidData = getEventsByPeriod({ bid, start, end })
+        // console.log('bidData.actions', bidData.actions)
+
+        data.actions = data.actions.concat(bidData.actions)
+        data.liveData.push(bidData.liveData)
+        data.hourlyData.push(bidData.hourlyData)
+        data.dailyData.push(bidData.dailyData)
+    })
+
+    redisClient.multi(data.actions)
         .exec((err, replies) => {
             console.log('err', err)
-
-            const res = {
-                [INTERVAL_TYPE.live]: mapLiveStatsResults({ timeIntervals: liveData.timeIntervals, replies: replies.slice(0, liveData.actions.length - 1), intervalType: INTERVAL_TYPE.live, interval: TIME_INTERVAL_LIVE }),
-                [INTERVAL_TYPE.hourly]: mapLiveStatsResults({ timeIntervals: hourlyData.timeIntervals, replies: replies.slice(liveData.actions.length, hourlyData.actions.length - 1), intervalType: INTERVAL_TYPE.hourly, interval: TIME_INTERVAL_LIVE }),
-                [INTERVAL_TYPE.daily]: mapLiveStatsResults({ timeIntervals: dailyData.timeIntervals, replies: replies.slice(liveData.actions.length + hourlyData.actions.length - 1), intervalType: INTERVAL_TYPE.daily, interval: TIME_INTERVAL_LIVE })
-            }
-
-            cb(res)
+            cb(mapBidsStatsResults({ bids, data, replies }))
         })
 }
 
 function registerEndpoint() {
     console.log('[' + pid + '] ' + 'Register endpoint /events');
     router.get('/events', function (request, response) {
-        var whenStart = Date.now();
-        var bid = request.query.bid;
+        const whenStart = Date.now();
+        const bid = request.query.bid
+        // TODO: make it with get and JSON body
+        const bids = ((request.query.bids || '').split(',')).filter((b) => !!b)
 
-        if (!bid) {
+        // console.log('bids', bids)
+
+        if (!bid && !bids) {
             return response.status(400).send({ error: 'Invalid bid id' })
         }
 
@@ -168,18 +241,16 @@ function registerEndpoint() {
                     response.json(results);
                     console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
                 }
-            });
-        } else if (request.query.start && request.query.end) {
-            getEventsByPeriod({
-                bid: bid, start: request.query.start, end: request.query.end, cb: (res) => {
+            })
+        } else if (bids.length && request.query.start && request.query.end) {
+            getEventsForBidsByPeriod({
+                bids: bids, start: request.query.start, end: request.query.end, cb: (res) => {
                     let whenEnd = Date.now();
                     console.log('getEventsByPeriod request took ' + (whenEnd - whenStart) + ' milliseconds');
                     response.json(res)
                 }
             })
-
         } else {
-            var whenStart = Date.now();
             if (request.query.start === undefined)
                 request.query.start = 0;
             if (request.query.end === undefined)
@@ -247,7 +318,6 @@ const addAllByInterval = (data) => {
                     })
             }
         })
-
 }
 
 function submitEntry(payload, response) {
