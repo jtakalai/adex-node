@@ -23,6 +23,13 @@ const EXPIRY_INTERVAL_HOURLY = 31 * 60 * 60 * MSECS_IN_SEC // 31 days
 
 const TIME_INTERVAL_DAILY = 24 * 60 * 60 * MSECS_IN_SEC // 24 hours
 const EXPIRY_INTERVAL_DAILY = 0 // NO EXPIRY
+const MAX_INTERVAL_DAILY = 365 * 24 * 60 * 60 * MSECS_IN_SEC // 364 days for request
+
+const INTERVAL_TYPE = {
+    live: 'live',
+    hourly: 'hourly',
+    daily: 'daily'
+}
 
 var scriptManager = null
 
@@ -35,34 +42,27 @@ function redisLoadScript() {
     scriptManager.loadFromFile('timefilter', './zcount.lua');
 }
 
-const getLiveStats = ({ now, bid, start, end }) => {
-    if (true || (now - start) < EXPIRY_INTERVAL_LIVE) {
-        const startTimeInterval = Math.floor(start / TIME_INTERVAL_LIVE)
-        const endIntervalTime = Math.floor(end / TIME_INTERVAL_LIVE)
+const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) => {
+    const startTimeInterval = Math.floor(start / timeInterval)
+    const endIntervalTime = Math.floor(end / timeInterval)
 
-        let currentInterval = startTimeInterval
-        const actions = []
-        const timeIntervals = []
-        while (currentInterval != endIntervalTime) {
-            actions.push(['hget', timeIntervalHash({ bid, type: 'click', timeType: 'live' }), currentInterval],
-                ['hget', timeIntervalHash({ bid, type: 'loaded', timeType: 'live' }), currentInterval])
-            timeIntervals.push(currentInterval)
+    let currentInterval = startTimeInterval
+    const actions = []
+    const timeIntervals = []
+    while (currentInterval != endIntervalTime) {
+        actions.push(['hget', timeIntervalHash({ bid, type: 'click', timeType: intervalType }), currentInterval],
+            ['hget', timeIntervalHash({ bid, type: 'loaded', timeType: intervalType }), currentInterval])
+        timeIntervals.push(currentInterval)
 
-            currentInterval = currentInterval + 1
-        }
-
-        // console.log('actions', actions)
-        // console.log('timeIntervals', timeIntervals)
-
-        return {
-            actions: actions,
-            timeIntervals: timeIntervals
-        }
+        currentInterval = currentInterval + 1
     }
 
+    // console.log('actions', actions)
+    // console.log('timeIntervals', timeIntervals)
+
     return {
-        actions: [],
-        timeIntervals: []
+        actions: actions,
+        timeIntervals: timeIntervals
     }
 }
 
@@ -87,11 +87,41 @@ const mapLiveStatsResults = ({ replies, timeIntervals, intervalType, interval })
 // TODO: Promisify 
 const getEventsByPeriod = ({ bid, start, end, cb }) => {
     const now = Date.now()
-    const data = getLiveStats({ now, bid, start, end })
+    let liveData = { actions: [], timeIntervals: [] }
+    let hourlyData = { actions: [], timeIntervals: [] }
+    let dailyData = { actions: [], timeIntervals: [] }
 
-    redisClient.multi(data.actions)
+    if ((now - end) <= EXPIRY_INTERVAL_LIVE) {
+        const maxLiveStart = now - EXPIRY_INTERVAL_LIVE
+        const liveStart = start > maxLiveStart ? start : maxLiveStart
+        liveData = getStatsActions({ now, bid, start: liveStart, end, timeInterval: TIME_INTERVAL_LIVE, intervalType: INTERVAL_TYPE.live })
+        // console.log('liveData', liveData.actions.length)
+    }
+
+    if ((now - end) <= EXPIRY_INTERVAL_HOURLY) {
+        const maxHourlyStart = now - EXPIRY_INTERVAL_HOURLY
+        const hourlyStart = start > maxHourlyStart ? start : maxHourlyStart
+        hourlyData = getStatsActions({ now, bid, start: hourlyStart, end, timeInterval: TIME_INTERVAL_HOURLY, intervalType: INTERVAL_TYPE.hourly })
+        // console.log('hourlyData', hourlyData.actions.length)
+    }
+
+    const maxDaylyStart = end - MAX_INTERVAL_DAILY
+    const daylyStart = start > maxDaylyStart ? start : maxDaylyStart
+    dailyData = getStatsActions({ now, bid, start: daylyStart, end, timeInterval: TIME_INTERVAL_DAILY, intervalType: INTERVAL_TYPE.daily })
+    // console.log('dailyData', dailyData.actions.length)
+
+    const data = liveData.actions.concat(hourlyData.actions, dailyData.actions)
+
+    redisClient.multi(data)
         .exec((err, replies) => {
-            const res = mapLiveStatsResults({ timeIntervals: data.timeIntervals, replies: replies, intervalType: 'live', interval: TIME_INTERVAL_LIVE })
+            console.log('err', err)
+
+            const res = {
+                [INTERVAL_TYPE.live]: mapLiveStatsResults({ timeIntervals: liveData.timeIntervals, replies: replies.slice(0, liveData.actions.length - 1), intervalType: INTERVAL_TYPE.live, interval: TIME_INTERVAL_LIVE }),
+                [INTERVAL_TYPE.hourly]: mapLiveStatsResults({ timeIntervals: hourlyData.timeIntervals, replies: replies.slice(liveData.actions.length, hourlyData.actions.length - 1), intervalType: INTERVAL_TYPE.hourly, interval: TIME_INTERVAL_LIVE }),
+                [INTERVAL_TYPE.daily]: mapLiveStatsResults({ timeIntervals: dailyData.timeIntervals, replies: replies.slice(liveData.actions.length + hourlyData.actions.length - 1), intervalType: INTERVAL_TYPE.daily, interval: TIME_INTERVAL_LIVE })
+            }
+
             cb(res)
         })
 }
@@ -242,10 +272,16 @@ function submitEntry(payload, response) {
         submitClick(payload);
     }
 
+    const dataCommon = {
+        bid: payload.bid,
+        time: payload.time,
+        type: payload.type,
+    }
+
     const intervalRedisTxData = [
-        { time: payload.time, interval: TIME_INTERVAL_LIVE, bid: payload.bid, type: payload.type, timeType: 'live', expInterval: EXPIRY_INTERVAL_LIVE },
-        { time: payload.time, interval: TIME_INTERVAL_HOURLY, bid: payload.bid, type: payload.type, timeType: 'hourly', expInterval: EXPIRY_INTERVAL_HOURLY },
-        { time: payload.time, interval: TIME_INTERVAL_DAILY, bid: payload.bid, type: payload.type, timeType: 'daily', expInterval: EXPIRY_INTERVAL_DAILY }
+        { ...dataCommon, interval: TIME_INTERVAL_LIVE, timeType: INTERVAL_TYPE.live, expInterval: EXPIRY_INTERVAL_LIVE },
+        { ...dataCommon, interval: TIME_INTERVAL_HOURLY, timeType: INTERVAL_TYPE.hourly, expInterval: EXPIRY_INTERVAL_HOURLY },
+        { ...dataCommon, interval: TIME_INTERVAL_DAILY, timeType: INTERVAL_TYPE.daily, expInterval: EXPIRY_INTERVAL_DAILY }
     ]
 
     addAllByInterval(intervalRedisTxData)
