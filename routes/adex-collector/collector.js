@@ -154,13 +154,13 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
                 timeIntervals: hourlyData.timeIntervals,
                 replies: replies.slice(currentHourlyDataIndex, nextHourlyDataIndex),
                 intervalType: INTERVAL_TYPE.hourly,
-                interval: TIME_INTERVAL_LIVE
+                interval: TIME_INTERVAL_HOURLY
             }),
             [INTERVAL_TYPE.daily]: mapStatsResults({
                 timeIntervals: dailyData.timeIntervals,
                 replies: replies.slice(currentDailyDataIndex, nextDailyDataIndex),
                 intervalType: INTERVAL_TYPE.daily,
-                interval: TIME_INTERVAL_LIVE
+                interval: TIME_INTERVAL_DAILY
             })
         }
 
@@ -247,6 +247,10 @@ function registerEndpoint() {
                 }
             })
         } else if (bids.length && request.query.start && request.query.end) {
+            if (request.query.start > request.query.end || isNaN(request.query.start) || isNaN(request.query.end)) {
+                return response.status(400).send({ error: 'invalid start/end' })
+            }
+
             getEventsForBidsByPeriod({
                 bids: bids, start: request.query.start, end: request.query.end, cb: (res) => {
                     let whenEnd = Date.now();
