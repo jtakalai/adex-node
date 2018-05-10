@@ -95,23 +95,33 @@ const getEventsByPeriod = ({ bid, start, end, cb }) => {
     let hourlyData = { actions: [], timeIntervals: [] }
     let dailyData = { actions: [], timeIntervals: [] }
 
-    if ((now - end) <= EXPIRY_INTERVAL_LIVE) {
+    const maxEnd = end < now ? end : now
+
+    if ((now - maxEnd) - EXPIRY_INTERVAL_LIVE) {
         const maxLiveStart = now - EXPIRY_INTERVAL_LIVE
-        const liveStart = start > maxLiveStart ? start : maxLiveStart
-        liveData = getStatsActions({ now, bid, start: liveStart, end, timeInterval: TIME_INTERVAL_LIVE, intervalType: INTERVAL_TYPE.live })
+        const liveStart = (start > maxLiveStart) ? start : maxLiveStart
+
+        if (liveStart < maxEnd) {
+            liveData = getStatsActions({ now, bid, start: liveStart, end: maxEnd, timeInterval: TIME_INTERVAL_LIVE, intervalType: INTERVAL_TYPE.live })
+        }
         // console.log('liveData', liveData.actions.length)
     }
 
-    if ((now - end) <= EXPIRY_INTERVAL_HOURLY) {
+    if ((now - maxEnd) <= EXPIRY_INTERVAL_HOURLY) {
         const maxHourlyStart = now - EXPIRY_INTERVAL_HOURLY
-        const hourlyStart = start > maxHourlyStart ? start : maxHourlyStart
-        hourlyData = getStatsActions({ now, bid, start: hourlyStart, end, timeInterval: TIME_INTERVAL_HOURLY, intervalType: INTERVAL_TYPE.hourly })
+        const hourlyStart = (start > maxHourlyStart) ? start : maxHourlyStart
+
+        if (hourlyStart < maxEnd) {
+            hourlyData = getStatsActions({ now, bid, start: hourlyStart, end: maxEnd, timeInterval: TIME_INTERVAL_HOURLY, intervalType: INTERVAL_TYPE.hourly })
+        }
         // console.log('hourlyData', hourlyData.actions.length)
     }
 
-    const maxDaylyStart = end - MAX_INTERVAL_DAILY
-    const daylyStart = start > maxDaylyStart ? start : maxDaylyStart
-    dailyData = getStatsActions({ now, bid, start: daylyStart, end, timeInterval: TIME_INTERVAL_DAILY, intervalType: INTERVAL_TYPE.daily })
+    const maxDailyStart = maxEnd - MAX_INTERVAL_DAILY
+    const dailyStart = (start > maxDailyStart) ? start : maxDailyStart
+    if (dailyStart < maxEnd) {
+        dailyData = getStatsActions({ now, bid, start: dailyStart, end: maxEnd, timeInterval: TIME_INTERVAL_DAILY, intervalType: INTERVAL_TYPE.daily })
+    }
     // console.log('dailyData', dailyData.actions.length)
 
     const data = liveData.actions.concat(hourlyData.actions, dailyData.actions)
