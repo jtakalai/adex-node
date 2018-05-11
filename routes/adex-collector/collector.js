@@ -70,14 +70,15 @@ const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) =
 }
 
 const mapStatsResults = ({ replies, timeIntervals, intervalType, interval }) => {
+    const eventTypesCount = EVENT_TYPES.length
     const mapped = timeIntervals.reduce((memo, int, index) => {
         memo.push({
             timeInterval: int,
             interval: interval,
             intervalType: intervalType,
-            clicks: replies[index * EVENT_TYPES.length],
-            loaded: replies[(index * EVENT_TYPES.length) + 1],
-            uniqueClick: replies[(index * EVENT_TYPES.length) + 2],
+            clicks: replies[index * eventTypesCount],
+            loaded: replies[(index * eventTypesCount) + 1],
+            uniqueClick: replies[(index * eventTypesCount) + 2],
         })
 
         return memo
@@ -97,22 +98,17 @@ const getEventsByPeriod = ({ bid, start, end, cb }) => {
 
     const maxEnd = end < now ? end : now
 
-    if ((now - maxEnd) - EXPIRY_INTERVAL_LIVE) {
-        const maxLiveStart = now - EXPIRY_INTERVAL_LIVE
-        const liveStart = (start > maxLiveStart) ? start : maxLiveStart
+    if ((start + TIME_INTERVAL_LIVE) >= (now - EXPIRY_INTERVAL_LIVE)) {
 
-        if (liveStart < maxEnd) {
-            liveData = getStatsActions({ now, bid, start: liveStart, end: maxEnd, timeInterval: TIME_INTERVAL_LIVE, intervalType: INTERVAL_TYPE.live })
+        if (start < maxEnd) {
+            liveData = getStatsActions({ now, bid, start: start, end: maxEnd, timeInterval: TIME_INTERVAL_LIVE, intervalType: INTERVAL_TYPE.live })
         }
         // console.log('liveData', liveData.actions.length)
     }
 
-    if ((now - maxEnd) <= EXPIRY_INTERVAL_HOURLY) {
-        const maxHourlyStart = now - EXPIRY_INTERVAL_HOURLY
-        const hourlyStart = (start > maxHourlyStart) ? start : maxHourlyStart
-
-        if (hourlyStart < maxEnd) {
-            hourlyData = getStatsActions({ now, bid, start: hourlyStart, end: maxEnd, timeInterval: TIME_INTERVAL_HOURLY, intervalType: INTERVAL_TYPE.hourly })
+    if ((start + TIME_INTERVAL_HOURLY) >= (now - EXPIRY_INTERVAL_HOURLY)) {
+        if (start < maxEnd) {
+            hourlyData = getStatsActions({ now, bid, start: start, end: maxEnd, timeInterval: TIME_INTERVAL_HOURLY, intervalType: INTERVAL_TYPE.hourly })
         }
         // console.log('hourlyData', hourlyData.actions.length)
     }
@@ -124,10 +120,7 @@ const getEventsByPeriod = ({ bid, start, end, cb }) => {
     }
     // console.log('dailyData', dailyData.actions.length)
 
-    const data = liveData.actions.concat(hourlyData.actions, dailyData.actions)
-
     const bidData = {
-        actions: data,
         liveData: liveData,
         hourlyData: hourlyData,
         dailyData: dailyData
@@ -143,14 +136,14 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
         const hourlyData = data.hourlyData[index]
         const dailyData = data.dailyData[index]
 
-        const currentLiveDataIndex = memo.liveDataIndex
+        const currentLiveDataIndex = memo.currentIndex
         const nextLiveDataIndex = currentLiveDataIndex + (liveData.actions.length - 1)
 
         const currentHourlyDataIndex = nextLiveDataIndex + 1
-        const nextHourlyDataIndex = nextLiveDataIndex + (hourlyData.actions.length - 1)
+        const nextHourlyDataIndex = currentHourlyDataIndex + (hourlyData.actions.length - 1)
 
         const currentDailyDataIndex = nextHourlyDataIndex + 1
-        const nextDailyDataIndex = nextHourlyDataIndex + (dailyData.actions.length - 1)
+        const nextDailyDataIndex = currentDailyDataIndex + (dailyData.actions.length - 1)
 
         const bidData = {
             bidId: bid,
@@ -175,11 +168,11 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
         }
 
         memo.data.push(bidData)
-        memo.liveDataIndex = nextDailyDataIndex + 1
+        memo.currentIndex = nextDailyDataIndex + 1
 
         return memo
 
-    }, { data: [], liveDataIndex: 0 })
+    }, { data: [], currentIndex: 0 })
 
     return mapped
 }
@@ -196,7 +189,7 @@ const getEventsForBidsByPeriod = ({ bids, start, end, cb }) => {
         const bidData = getEventsByPeriod({ bid, start, end })
         // console.log('bidData.actions', bidData.actions)
 
-        data.actions = data.actions.concat(bidData.actions)
+        data.actions = data.actions.concat(bidData.liveData.actions, bidData.hourlyData.actions, bidData.dailyData.actions)
         data.liveData.push(bidData.liveData)
         data.hourlyData.push(bidData.hourlyData)
         data.dailyData.push(bidData.dailyData)
@@ -205,8 +198,18 @@ const getEventsForBidsByPeriod = ({ bids, start, end, cb }) => {
     redisClient.multi(data.actions)
         .exec((err, replies) => {
             console.log('err', err)
+            // console.log('replies', replies.length)
             cb(mapBidsStatsResults({ bids, data, replies }))
         })
+}
+
+const parseIntOrZero = (num) => {
+    let int = 0
+    if (!isNaN(num)) {
+        int = parseInt(num, 10)
+    }
+
+    return int
 }
 
 function registerEndpoint() {
@@ -216,6 +219,8 @@ function registerEndpoint() {
         const bid = request.query.bid
         // TODO: make it with get and JSON body
         const bids = ((request.query.bids || '').split(',')).filter((b) => !!b)
+        let start = parseIntOrZero(request.query.start)
+        let end = parseIntOrZero(request.query.end)
 
         // console.log('bids', bids)
 
@@ -256,13 +261,13 @@ function registerEndpoint() {
                     console.log('hget request took ' + (whenEnd - whenStart) + ' milliseconds');
                 }
             })
-        } else if (bids.length && request.query.start && request.query.end) {
-            if (request.query.start > request.query.end || isNaN(request.query.start) || isNaN(request.query.end)) {
+        } else if (bids.length && start && end) {
+            if (start > end || isNaN(start) || isNaN(end)) {
                 return response.status(400).send({ error: 'invalid start/end' })
             }
 
             getEventsForBidsByPeriod({
-                bids: bids, start: request.query.start, end: request.query.end, cb: (res) => {
+                bids: bids, start: start, end: end, cb: (res) => {
                     let whenEnd = Date.now();
                     console.log('getEventsByPeriod request took ' + (whenEnd - whenStart) + ' milliseconds');
                     response.json(res)
