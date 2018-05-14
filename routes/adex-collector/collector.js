@@ -69,22 +69,35 @@ const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) =
     }
 }
 
-const mapStatsResults = ({ replies, timeIntervals, intervalType, interval }) => {
+const mapStatsResultsGrouped = ({ stats, replies, timeIntervals, intervalType, interval }) => {
+    const newStats = { ...stats }
     const eventTypesCount = EVENT_TYPES.length
-    const mapped = timeIntervals.reduce((memo, int, index) => {
-        memo.push({
-            timeInterval: int,
-            interval: interval,
-            intervalType: intervalType,
-            clicks: replies[index * eventTypesCount],
-            loaded: replies[(index * eventTypesCount) + 1],
-            uniqueClick: replies[(index * eventTypesCount) + 2],
-        })
+    const mapped = timeIntervals.reduce((memory, int, index) => {
+
+        const memo = { ...memory }
+        const intervalStats = {
+            clicks: parseIntOrZero(replies[index * eventTypesCount]),
+            loaded: parseIntOrZero(replies[(index * eventTypesCount) + 1]),
+            uniqueClick: parseIntOrZero(replies[(index * eventTypesCount) + 2]),
+        }
+
+        const statsStats = memo.stats[int] || { clicks: 0, loaded: 0, uniqueClick: 0 }
+        statsStats.clicks += intervalStats.clicks
+        statsStats.loaded += intervalStats.loaded
+        statsStats.uniqueClick += intervalStats.uniqueClick
+
+        const bidStats = { ...memo.bidStats }
+        bidStats.clicks += intervalStats.clicks
+        bidStats.loaded += intervalStats.loaded
+        bidStats.uniqueClick += intervalStats.uniqueClick
+
+        memo.stats[int] = statsStats
+        memo.bidStats = bidStats
 
         return memo
-    }, [])
+    }, { stats: newStats, bidStats: { clicks: 0, loaded: 0, uniqueClick: 0 } })
 
-    // console.log(mapped)
+    // console.log('mapped', mapped)
 
     return mapped
 }
@@ -129,6 +142,14 @@ const getEventsByPeriod = ({ bid, start, end, cb }) => {
     return bidData
 }
 
+const mergeStats = ({ prev, next }) => {
+    return {
+        clicks: (prev.clicks || 0) + (next.clicks || 0),
+        loaded: (prev.loaded || 0) + (next.loaded || 0),
+        uniqueClick: (prev.uniqueClick || 0) + (next.uniqueClick || 0)
+    }
+}
+
 const mapBidsStatsResults = ({ bids, data, replies }) => {
     const mapped = bids.reduce((memo, bid, index) => {
 
@@ -145,21 +166,23 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
         const currentDailyDataIndex = nextHourlyDataIndex + 1
         const nextDailyDataIndex = currentDailyDataIndex + (dailyData.actions.length - 1)
 
-        const bidData = {
-            bidId: bid,
-            [INTERVAL_TYPE.live]: mapStatsResults({
+        const newStats = {
+            [INTERVAL_TYPE.live]: mapStatsResultsGrouped({
+                stats: memo.stats[INTERVAL_TYPE.live],
                 timeIntervals: liveData.timeIntervals,
                 replies: replies.slice(currentLiveDataIndex, nextLiveDataIndex),
                 intervalType: INTERVAL_TYPE.live,
                 interval: TIME_INTERVAL_LIVE
             }),
-            [INTERVAL_TYPE.hourly]: mapStatsResults({
+            [INTERVAL_TYPE.hourly]: mapStatsResultsGrouped({
+                stats: memo.stats[INTERVAL_TYPE.hourly],
                 timeIntervals: hourlyData.timeIntervals,
                 replies: replies.slice(currentHourlyDataIndex, nextHourlyDataIndex),
                 intervalType: INTERVAL_TYPE.hourly,
                 interval: TIME_INTERVAL_HOURLY
             }),
-            [INTERVAL_TYPE.daily]: mapStatsResults({
+            [INTERVAL_TYPE.daily]: mapStatsResultsGrouped({
+                stats: memo.stats[INTERVAL_TYPE.daily],
                 timeIntervals: dailyData.timeIntervals,
                 replies: replies.slice(currentDailyDataIndex, nextDailyDataIndex),
                 intervalType: INTERVAL_TYPE.daily,
@@ -167,12 +190,23 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
             })
         }
 
-        memo.data.push(bidData)
+        memo.bidsData[bid] = {
+            [INTERVAL_TYPE.live]: newStats[INTERVAL_TYPE.live].bidStats,
+            [INTERVAL_TYPE.hourly]: newStats[INTERVAL_TYPE.hourly].bidStats,
+            [INTERVAL_TYPE.daily]: newStats[INTERVAL_TYPE.daily].bidStats
+        }
+
+        memo.stats = {
+            [INTERVAL_TYPE.live]: newStats[INTERVAL_TYPE.live].stats,
+            [INTERVAL_TYPE.hourly]: newStats[INTERVAL_TYPE.hourly].stats,
+            [INTERVAL_TYPE.daily]: newStats[INTERVAL_TYPE.daily].stats,
+        }
+
         memo.currentIndex = nextDailyDataIndex + 1
 
         return memo
 
-    }, { data: [], currentIndex: 0 })
+    }, { bidsData: {}, stats: { [INTERVAL_TYPE.live]: {}, [INTERVAL_TYPE.hourly]: {}, [INTERVAL_TYPE.daily]: {} }, currentIndex: 0 })
 
     return mapped
 }
@@ -205,8 +239,9 @@ const getEventsForBidsByPeriod = ({ bids, start, end, cb }) => {
 
 const parseIntOrZero = (num) => {
     let int = 0
-    if (!isNaN(num)) {
-        int = parseInt(num, 10)
+    const parsed = parseInt(num, 10)
+    if (!isNaN(parsed)) {
+        int = parsed
     }
 
     return int
@@ -343,7 +378,13 @@ const addAllByInterval = (data) => {
         })
 }
 
+// const getRndInt = (max) => {
+//     return (Math.floor(Math.random() * Math.floor(max)))
+// }
+
 function submitEntry(payload, response) {
+
+    // payload.time = payload.time - (getRndInt(24) * 60 * 60 * 1000)
     redisClient.zadd(['bid:' + payload.bid, payload.time,
     JSON.stringify({
         'type': payload.type,
