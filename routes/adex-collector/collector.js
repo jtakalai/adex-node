@@ -31,7 +31,7 @@ const INTERVAL_TYPE = {
     daily: 'daily'
 }
 
-const EVENT_TYPES = ['click', 'loaded', 'uniqueClick']
+const EVENT_TYPES = ['click', 'loaded', 'unique-click']
 
 var scriptManager = null
 
@@ -44,15 +44,16 @@ function redisLoadScript() {
 }
 
 const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) => {
-    const startTimeInterval = Math.floor(start / timeInterval)
-    const endIntervalTime = Math.floor(end / timeInterval)
+    const startTimeInterval = Math.floor((start) / timeInterval)
+    const endIntervalTime = Math.floor((end + timeInterval) / timeInterval)
 
     let currentInterval = startTimeInterval
     const actions = []
     const timeIntervals = []
     while (currentInterval != endIntervalTime) {
         EVENT_TYPES.forEach((evType) => {
-            actions.push(['hget', timeIntervalHash({ bid, type: evType, timeType: intervalType }), currentInterval])
+            const hash = timeIntervalHash({ bid, type: evType, timeType: intervalType })
+            actions.push(['hget', hash, currentInterval])
         })
 
         timeIntervals.push(currentInterval)
@@ -156,15 +157,16 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
         const liveData = data.liveData[index]
         const hourlyData = data.hourlyData[index]
         const dailyData = data.dailyData[index]
+        const eventTypesLength = EVENT_TYPES.length
 
         const currentLiveDataIndex = memo.currentIndex
-        const nextLiveDataIndex = currentLiveDataIndex + (liveData.actions.length - 1)
+        const nextLiveDataIndex = currentLiveDataIndex + (eventTypesLength * liveData.timeIntervals.length)
 
-        const currentHourlyDataIndex = nextLiveDataIndex + 1
-        const nextHourlyDataIndex = currentHourlyDataIndex + (hourlyData.actions.length - 1)
+        const currentHourlyDataIndex = nextLiveDataIndex
+        const nextHourlyDataIndex = currentHourlyDataIndex + (eventTypesLength * hourlyData.timeIntervals.length)
 
-        const currentDailyDataIndex = nextHourlyDataIndex + 1
-        const nextDailyDataIndex = currentDailyDataIndex + (dailyData.actions.length - 1)
+        const currentDailyDataIndex = nextHourlyDataIndex
+        const nextDailyDataIndex = currentDailyDataIndex + (eventTypesLength * dailyData.timeIntervals.length)
 
         const newStats = {
             [INTERVAL_TYPE.live]: mapStatsResultsGrouped({
@@ -202,13 +204,20 @@ const mapBidsStatsResults = ({ bids, data, replies }) => {
             [INTERVAL_TYPE.daily]: newStats[INTERVAL_TYPE.daily].stats,
         }
 
-        memo.currentIndex = nextDailyDataIndex + 1
+        memo.currentIndex = nextDailyDataIndex
 
         return memo
 
     }, { bidsData: {}, stats: { [INTERVAL_TYPE.live]: {}, [INTERVAL_TYPE.hourly]: {}, [INTERVAL_TYPE.daily]: {} }, currentIndex: 0 })
 
-    return mapped
+    return {
+        bidsStats: mapped.bidsData,
+        stats: {
+            [INTERVAL_TYPE.live]: { interval: TIME_INTERVAL_LIVE, intervalStats: mapped.stats[INTERVAL_TYPE.live] },
+            [INTERVAL_TYPE.hourly]: { interval: TIME_INTERVAL_HOURLY, intervalStats: mapped.stats[INTERVAL_TYPE.hourly] },
+            [INTERVAL_TYPE.daily]: { interval: TIME_INTERVAL_DAILY, intervalStats: mapped.stats[INTERVAL_TYPE.daily] }
+        }
+    }
 }
 
 const getEventsForBidsByPeriod = ({ bids, start, end, cb }) => {
@@ -221,18 +230,17 @@ const getEventsForBidsByPeriod = ({ bids, start, end, cb }) => {
 
     bids.forEach(bid => {
         const bidData = getEventsByPeriod({ bid, start, end })
-        // console.log('bidData.actions', bidData.actions)
 
         data.actions = data.actions.concat(bidData.liveData.actions, bidData.hourlyData.actions, bidData.dailyData.actions)
-        data.liveData.push(bidData.liveData)
-        data.hourlyData.push(bidData.hourlyData)
-        data.dailyData.push(bidData.dailyData)
+
+        data.liveData.push({ timeIntervals: bidData.liveData.timeIntervals })
+        data.hourlyData.push({ timeIntervals: bidData.hourlyData.timeIntervals })
+        data.dailyData.push({ timeIntervals: bidData.dailyData.timeIntervals })
     })
 
     redisClient.multi(data.actions)
         .exec((err, replies) => {
             console.log('err', err)
-            // console.log('replies', replies.length)
             cb(mapBidsStatsResults({ bids, data, replies }))
         })
 }
@@ -256,8 +264,6 @@ function registerEndpoint() {
         const bids = ((request.query.bids || '').split(',')).filter((b) => !!b)
         let start = parseIntOrZero(request.query.start)
         let end = parseIntOrZero(request.query.end)
-
-        // console.log('bids', bids)
 
         if (!bid && !bids) {
             return response.status(400).send({ error: 'Invalid bid id' })
@@ -378,13 +384,7 @@ const addAllByInterval = (data) => {
         })
 }
 
-// const getRndInt = (max) => {
-//     return (Math.floor(Math.random() * Math.floor(max)))
-// }
-
 function submitEntry(payload, response) {
-
-    // payload.time = payload.time - (getRndInt(24) * 60 * 60 * 1000)
     redisClient.zadd(['bid:' + payload.bid, payload.time,
     JSON.stringify({
         'type': payload.type,
@@ -441,12 +441,14 @@ function submitClick({ payload, intervalRedisTxData }) {
                         console.log('[HSET] Add user entry failed failed ' + err)
                     }
                     if (result > 0) {
-                        addAllByInterval(intervalRedisTxData.map((data) => {
+                        const data = intervalRedisTxData.map((data) => {
                             const mapped = { ...data }
                             mapped.type = 'unique-click'
 
                             return mapped
-                        }))
+                        })
+
+                        addAllByInterval(data)
 
                         return bidsModel.addClicksToBid({ id: payload.bid })
                     }
