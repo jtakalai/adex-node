@@ -4,27 +4,28 @@
 var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
 var http = require('http');
-var nacl = require('tweetnacl');
-nacl.util = require('tweetnacl-util');
+var sigUtil = require('eth-sig-util');
 
 var fileName = argv._[0];
 if (fileName === undefined) {
 	console.log('usage: ./numClicksPost <sample-data-file>' +
 		' --server=<server-name>' +
 		' --port=<server-port>' +
-		' --privateKey=<keyfile>');
+		' --privateKey=<key>' +
+		' --address=');
 	process.exit(1);
 }
 
-var privateKeyFile = './private.key';
+var privateKeyHex = '115bf6cba62647bb6bea5b5be252ff1ac04ab359a1e614dbb1f8055792b7fe8b';
 var servername = 'localhost';
-var serverport = 8080;
+var serverport = 9710;
+var address = '0x28772520c5336134e2d2a5fb329ea23ae310f3da';
 if (argv.server) servername = argv.server;
 if (argv.port) serverport = argv.port;
-if (argv.privateKey) privateKeyFile = argv.privateKey;
+if (argv.privateKey) privateKeyHex = argv.privateKey;
+if (argv.address) address = argv.address;
 
 var data = JSON.parse(fs.readFileSync(fileName, 'utf8'));
-var privateKey = fs.readFileSync(privateKeyFile, 'utf8');
 
 console.log("Start");
 var whenStart = Date.now();
@@ -33,21 +34,58 @@ var timer = null;
 
 console.log('count is ' + count);
 
-function submitRequest(which) {
-	var keyPair = nacl.sign.keyPair.fromSecretKey(nacl.util.decodeBase64(privateKey));
-	var message = JSON.stringify(data[which]);
-	var signature = nacl.sign.detached(nacl.util.decodeUTF8(message), keyPair.secretKey);
+var authToken = '5529476812651869';
+var signature = '';
+console.log(privateKeyHex);
+var privateKey = Buffer.from(privateKeyHex, 'hex')
+var sessionSignature = prepareSessionSignature(privateKey, authToken)
 
+console.log(sessionSignature);
+
+function prepareSessionSignature(privKey, authToken) {
+	var typed = [  { type: 'uint', name: 'Auth token', value: authToken} ]
+	var msgParams = { data: typed }
+	var signature = sigUtil.signTypedData(privKey, msgParams)
+
+	return signature;
+}
+
+/* Sample item
+    {
+        "time": "2018-02-13T11:56:44.211Z",
+        "type": "click",
+        "adunit": 43,
+        "bid": 42,
+	"address" : "0x5f0ae333f96b33def7db653adec168ebb74dbe00"
+    }
+*/
+function submitRequest(which) {
+	var message = JSON.stringify(data[which]);
+	delete data[which].uid;
+	data[which].address = address;
+	var timestamp = Date.parse(data[which].time);
+	data[which].time = timestamp;
+	var dataToSign = [  { type: 'string', name: 'Event', value: JSON.stringify(data[which]) }];
+	var msgParams = { data: dataToSign }
+	var signature = sigUtil.signTypedData(privateKey, msgParams);
+	data[which].signature = signature;
+	data[which].sigMode = 0;
+
+	var body = JSON.stringify(data[which])
 	var options = {
 	    host: servername,
 	    port: serverport,
-		path: '/submit?signature=' + encodeURIComponent(nacl.util.encodeBase64(signature)) + '&data=' + JSON.stringify(data[which]),
+		path: '/submit',
 		method: 'POST',
 		headers: {
-			'X-public-key': nacl.util.encodeBase64(keyPair.publicKey),
+			'X-User-Signature': sessionSignature,
+			'Content-Type': 'application/json',
+			'Content-Length': body.length
 		}
 	};
-	var request = http.request(options, function(result) {	
+	console.log(options.body)
+	var request = http.request(options, function(result) {
+		console.log(request)
 		result.on('data', function() {
 			responses += 1;
 			processed++;
@@ -63,7 +101,7 @@ function submitRequest(which) {
 			processed++;
 		});
 	});
-	// console.log('Submited data (' + which + ') ' + JSON.stringify(data[which]));
+	request.write(body);
 	request.end();
 }
 

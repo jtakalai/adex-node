@@ -1,19 +1,48 @@
-'use strict';
+'use strict'
 
-const express = require('express');
-var router = express.Router();
+const express = require('express')
+const router = express.Router()
+const Bids = require('./../../models/bids')
+const Items = require('./../../models/items')
+const ObjectId = require('mongodb').ObjectId
 
-router.get('/adexview', function (request, response) {
-    let jsonp = request.query.callback
-    console.log('jsonp', jsonp)
+router.get('/view', function (req, res) {
+    let slotIpfs = req.query.slotIpfs
 
-    let result = {
-        imgSrc: 'http://adex.network/adex/adex-logo-w-txt.png'
+    if (!slotIpfs) {
+        return res.status(404).send('No slot ipfs id query param provided')
     }
 
-    let resStr = JSON.stringify(result)
+    let bids = []
 
-    response.send(jsonp + '(' + resStr + ')')
-});
+    Bids.getActiveBidsAdUnitsForSlot({ adSlot: slotIpfs })
+        .then((bidsUnits) => {
+            return bidsUnits.reduce((memo, bid, index) => {
+                memo.adUnitsIds.push(ObjectId(bid._adUnitId))
+                memo.bids.push(bid)
+                return memo
+            }, { adUnitsIds: [], bids: [] })
 
-module.exports = router;
+        })
+        .then((mapped) => {
+            bids = mapped.bids
+            return Items.getItemsByIds({ ids: mapped.adUnitsIds })
+        })
+        .then((adUnits) => {
+            //NOTE: Map the bids because we can have more than one bid for the same ad unit
+            let resBids = bids.map((bid) => {
+                return {
+                    adUnit: adUnits[bid._adUnitId],
+                    bid: bid
+                }
+            })
+
+            return res.send(resBids)
+        })
+        .catch((err) => {
+            console.log('getActiveBidsAdUnitsForSlot err', err)
+            return res.status(500).send(err)
+        })
+})
+
+module.exports = router

@@ -1,7 +1,9 @@
 const ipfsAPI = require('ipfs-api')
+const ipfsHost = process.env.IPFSHOST || 'ipfs.adex.network'
+const ipfsPort = process.env.IPFSPORT || '8443'
+const ipfsProtocol = process.env.IPFSPROTOCOL || 'https'
 
-//TODO: dev/prod settings
-const ipfs = ipfsAPI('localhost', '5001')
+const ipfs = ipfsAPI(ipfsHost, ipfsPort, { protocol: ipfsProtocol })
 
 function addFileToIpfs(file) {
     return new Promise((resolve, reject) => {
@@ -9,12 +11,16 @@ function addFileToIpfs(file) {
         ipfs.files.add(buffer)
             .then(function (result) {
                 // console.log('addFileToIpfs result', result)
-                return resolve(result[0].hash)
+                if (result[0]) {
+                    return resolve(result[0].hash)
+                } else {
+                    return reject('Error adding data to ipfs')
+                }
             })
             .catch(function (err) {
                 //TODO: Logger
                 console.log(err)
-                return resolve('ipfs error', err)
+                return reject('ipfs error', err)
             })
     })
 }

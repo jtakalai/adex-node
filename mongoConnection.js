@@ -1,14 +1,26 @@
 'use strict'
 
 const MongoClient = require('mongodb').MongoClient
-const url = 'mongodb://adex-mongo:27017'
+
+var dbPort = process.env.MONGO_PORT || 27017;
+var dbPassword = process.env.MONGO_PASSWD || 'oCeigu2thah7zaepeer8Lohhahng2iod';
+var dbUser = process.env.MONGO_USER || 'admin';
+var dbPrimary = process.env.MONGO_PRIMARY || 'testcluster0-shard-00-00-xy29f.mongodb.net'
+var dbSecondary1 = process.env.MONGO_SECONDARY1 || 'testcluster0-shard-00-02-xy29f.mongodb.net'
+var dbSecondary2 = process.env.MONGO_SECONDARY2 || 'testcluster0-shard-00-02-xy29f.mongodb.net'
+var dbReplicaSet = process.env.MONGO_REPLICASET || 'TestCluster0-shard-0'
+
+var uri = 'mongodb://' + dbUser + ':' + dbPassword + '@' + dbPrimary + ":" + dbPort + ',' +
+           dbSecondary1 + ":" + dbPort + ',' + dbSecondary2 + ":" + dbPort +',' +
+           '/test?ssl=true&replicaSet=' + dbReplicaSet + '&authSource=admin'
+
 const dbName = 'adexnode'
 const Indexing = require('./models/indexing')
 
 let db = null
 
 function connect(cb) {
-    MongoClient.connect(url, (err, client) => {
+    MongoClient.connect(uri, (err, client) => {
         if (err) {
             console.log('MongoDb connection error', err)
         } else {
@@ -16,7 +28,7 @@ function connect(cb) {
             console.log("Connected successfully to server")
             db = client.db(dbName)
 
-            Indexing.ctrateIndexes(db)
+            Indexing.createIndexes(db)
         }
 
         return cb(err)

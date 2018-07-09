@@ -6,16 +6,14 @@ const express = require('express');
 const session = require('express-session');
 const headerParser = require('header-parser');
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
 const mongodb = require('./mongoConnection')
-const RedisStore = require('connect-redis')(session);
-
-const Web3 = require('web3');
-var web3 = new Web3();
+var redisClient = require('./redisInit')
 
 //TODO: fix db connection
 mongodb.connect((err) => {
 	initApp()
+	//TEMP fix
+	require('./services/web3/bidsWatcher')()
 })
 
 const initApp = () => {
@@ -24,83 +22,70 @@ const initApp = () => {
 	app.set('view engine', 'pug');
 	app.use(headerParser);
 	app.use(bodyParser.urlencoded({ extended: false }));
-	app.use(bodyParser.json());
-	// app.use(bodyParser.text());
-	app.use(cookieParser());
+	app.use(bodyParser.json())
 
-	app.use(session({
-		store: new RedisStore({
-			host: 'adex-redis',
-			logErrors: true
-		}),
-		key: 'userid',
-		secret: 'ooShaethophai8to',
-		resave: false,
-		saveUninitialized: false,
-		cookie: {
-			expires: 600000
-		}
-	}));
-
-	// TODO: Do we origin * ?
 	app.use(function (req, res, next) {
-		res.header("Access-Control-Allow-Origin", "*")
-		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, useraddres")
+		res.header('Access-Control-Allow-Origin', '*')
+		res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-User-Signature, X-User-Address, X-Auth-Token')
 		res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
 		next()
-	});
+	})
 
-	// route for user Login
-	app.route('/login')
-		.get((req, res) => {
-			res.cookie('authToken', Math.floor(Math.random() * Number.MAX_SAFE_INTEGER))
-			res.sendFile(__dirname + '/login.html');
-		})
-		.post((req, res) => {
-			var userid = req.body.userid,
-				signature = req.body.signature;
+	const signatureCheck = ((req, res, next) => {
 
-			// console.log('User id ' + req.body.userid + ', token ' + req.cookies.authToken + ' signature ' + req.body.signature);
+		// 
+		/*
+		 * NOTE: when use fetch first is sent OPTIONS req but it does not contains the values for the custom header (just as Access-Control-Request-Headers)
+		 * for some reason fetch mode 'cors' sends GET that acts like OPTIONS (no values for custom header)
+		 * So we need to skip that check for OPTIONS requests
+		 */
+		if (req.method === 'OPTIONS') {
+			return next()
+		}
 
-			if (req.session === undefined) {
-				res.status(500).send('Internal error');
-				return;
-			}
+		let usersig = req.headers['x-user-signature']
 
-			try {
-				var user = web3.eth.accounts.recover(web3.eth.accounts.hashMessage(req.cookies.authToken), signature);
-			} catch (err) {
-				console.log('Error verifying signature ' + err);
-				res.status(401).send('Error verifying signature ' + err);
-				return;
-			}
+		console.log('usersig', usersig)
 
-			if (user === userid) {
-				req.session.user = user;
-				res.redirect('/');
-			} else {
-				res.redirect('/login');
-			}
-		});
+		if (usersig) {
+			redisClient.get('session:' + usersig, (err, reply) => {
+				// console.log('err', err)
+				// console.log('reply', reply)
 
-	app.use((req, res, next) => {
-		// TODO: validation, session, ... etc.
-		// TEMP!!
-		if (!req.session || !req.session.user) {
-			res.redirect('/login');
+				if (err) {
+					console.log('redis err', err)
+					return res.status(500).send({ error: 'Internal error' });
+				}
+				if (reply) {
+					// console.log('reply:', reply.toString())
+					try {
+						req.user = (JSON.parse(reply)).user.toString()
+						return next()
+					} catch (err) {
+						console.log('Redis error: Unable to verify user signature')
+						return res.status(403).send({ error: 'Internal error verifying user signature' });
+					}
+				} else {
+					// return next()
+					return res.status(403).send({ error: 'Authentication failed' });
+				}
+			})
 		} else {
-		    req.user = req.headers['useraddres']
-		    next()
+			console.log('X-User-Signature header missing');
+			// return next()		
+			return res.status(403).send({ error: 'Authentication required' });
 		}
 	})
 
-
 	http.createServer(app).listen(app.get('port'), function () {
-		console.log("Express server listening on port " + app.get('port'));
-	});
+		console.log("Express server listening on port " + app.get('port'))
+	})
 
 	// Not used in adexview and collector this branch
-	// app.use('/', require('./routes/adex-collector/collector'))
-	// app.use('/', require('./routes/adex-view/adex-view'))
-	app.use('/', require('./routes/registry/registry'))
+	app.use('/', require('./routes/auth/auth'))
+	app.use('/', signatureCheck, require('./routes/auth/auth-check'))
+	app.use('/', signatureCheck, require('./routes/adex-collector/collector'))
+	app.use('/', signatureCheck, require('./routes/adex-view/adex-view'))
+	app.use('/', signatureCheck, require('./routes/registry/items'))
+	app.use('/', signatureCheck, require('./routes/registry/exchange'))
 }
