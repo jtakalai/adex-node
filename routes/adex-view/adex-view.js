@@ -1,24 +1,12 @@
-'use strict';
+'use strict'
 
 const express = require('express')
-var router = express.Router()
+const router = express.Router()
 const Bids = require('./../../models/bids')
 const Items = require('./../../models/items')
-const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 
 router.get('/view', function (req, res) {
-    // let jsonp = request.query.callback
-    // console.log('jsonp', jsonp)
-
-    // let result = {
-    //     imgSrc: 'http://adex.network/adex/adex-logo-w-txt.png'
-    // }
-
-    // let resStr = JSON.stringify(result)
-
-    // response.send(jsonp + '(' + resStr + ')')
-
     let slotIpfs = req.query.slotIpfs
 
     if (!slotIpfs) {
@@ -27,7 +15,6 @@ router.get('/view', function (req, res) {
 
     let bids = []
 
-    //NOTE
     Bids.getActiveBidsAdUnitsForSlot({ adSlot: slotIpfs })
         .then((bidsUnits) => {
             return bidsUnits.reduce((memo, bid, index) => {

@@ -2,8 +2,6 @@
 
 const express = require('express')
 const multer = require('multer')
-const web3 = require('web3')
-
 const router = express.Router()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
@@ -77,7 +75,7 @@ router.get('/items/:id', (req, res) => {
         })
 })
 
-// NOTE: Temp not use, now we are jus going to use _archived prop through PUT
+// NOTE: Temp not use, now we are just going to use _archived prop through PUT
 router.delete('/items', (req, res) => {
     Items.flagItemDeleted({ id: req.query.id, user: req.user, type: req.query.type })
         .then((items) => {

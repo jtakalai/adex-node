@@ -1,17 +1,16 @@
-'use strict';
+'use strict'
 
-const express = require('express');
-const router = express.Router();
-const redis = require('redis');
-const scripto = require('redis-scripto');
+const express = require('express')
+const router = express.Router()
+const scripto = require('redis-scripto')
 
 const redisClient = require('./../../redisInit')
 const { getAddrFromSignedMsg } = require('./../../services/web3/utils')
 
 const bidsModel = require('./../../models/bids')
-const { promisify } = require('util')
+// const { promisify } = require('util')
 
-const pid = process.pid;
+const pid = process.pid
 
 const MSECS_IN_SEC = 1000
 
@@ -33,14 +32,14 @@ const INTERVAL_TYPE = {
 
 const EVENT_TYPES = ['click', 'loaded', 'unique-click']
 
-var scriptManager = null
+let scriptManager = null
 
-redisLoadScript();
-registerEndpoint();
+redisLoadScript()
+registerEndpoint()
 
 function redisLoadScript() {
-    scriptManager = new scripto(redisClient);
-    scriptManager.loadFromFile('timefilter', './zcount.lua');
+    scriptManager = new scripto(redisClient)
+    scriptManager.loadFromFile('timefilter', './zcount.lua')
 }
 
 const getStatsActions = ({ now, bid, start, end, timeInterval, intervalType }) => {
@@ -143,13 +142,13 @@ const getEventsByPeriod = ({ bid, start, end, cb }) => {
     return bidData
 }
 
-const mergeStats = ({ prev, next }) => {
-    return {
-        clicks: (prev.clicks || 0) + (next.clicks || 0),
-        loaded: (prev.loaded || 0) + (next.loaded || 0),
-        uniqueClick: (prev.uniqueClick || 0) + (next.uniqueClick || 0)
-    }
-}
+// const mergeStats = ({ prev, next }) => {
+//     return {
+//         clicks: (prev.clicks || 0) + (next.clicks || 0),
+//         loaded: (prev.loaded || 0) + (next.loaded || 0),
+//         uniqueClick: (prev.uniqueClick || 0) + (next.uniqueClick || 0)
+//     }
+// }
 
 const mapBidsStatsResults = ({ bids, data, replies }) => {
     const mapped = bids.reduce((memo, bid, index) => {
@@ -384,7 +383,7 @@ const addAllByInterval = (data) => {
         })
 }
 
-function submitEntry(payload, response) {
+const submitEntry = (payload, response) => {
     redisClient.zadd(['bid:' + payload.bid, payload.time,
     JSON.stringify({
         'type': payload.type,
@@ -421,7 +420,7 @@ function submitEntry(payload, response) {
     addAllByInterval(intervalRedisTxData)
 }
 
-function submitClick({ payload, intervalRedisTxData }) {
+const submitClick = ({ payload, intervalRedisTxData }) => {
     // special handling for clicks - verify signature and send to Mongo
     var signature = payload.signature
     var sigMode = payload.sigMode
@@ -487,7 +486,7 @@ router.post('/submit', function (request, response) {
     }
 
     //console.log('Public key len is ' + publicKey + ', signature is ' + request.query.signature + ' data is ' + request.query.data);
-    submitEntry(payload, response);
-});
+    submitEntry(payload, response)
+})
 
-module.exports = router;
+module.exports = router

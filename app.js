@@ -32,6 +32,8 @@ const initApp = () => {
 	})
 
 	const signatureCheck = ((req, res, next) => {
+
+		// 
 		/*
 		 * NOTE: when use fetch first is sent OPTIONS req but it does not contains the values for the custom header (just as Access-Control-Request-Headers)
 		 * for some reason fetch mode 'cors' sends GET that acts like OPTIONS (no values for custom header)
@@ -43,12 +45,16 @@ const initApp = () => {
 
 		let usersig = req.headers['x-user-signature']
 
+		console.log('usersig', usersig)
+
 		if (usersig) {
 			redisClient.get('session:' + usersig, (err, reply) => {
+				// console.log('err', err)
+				// console.log('reply', reply)
 
 				if (err) {
 					console.log('redis err', err)
-					res.status(500).send({ error: 'Internal error' });
+					return res.status(500).send({ error: 'Internal error' });
 				}
 				if (reply) {
 					// console.log('reply:', reply.toString())
@@ -57,17 +63,17 @@ const initApp = () => {
 						return next()
 					} catch (err) {
 						console.log('Redis error: Unable to verify user signature')
-						res.status(401).send({ error: 'Internal error verifying user signature' });
+						return res.status(403).send({ error: 'Internal error verifying user signature' });
 					}
 				} else {
 					// return next()
-					res.status(401).send({ error: 'Authentication failed' });
+					return res.status(403).send({ error: 'Authentication failed' });
 				}
 			})
 		} else {
 			console.log('X-User-Signature header missing');
 			// return next()		
-			res.status(403).send({ error: 'Authentication required' });
+			return res.status(403).send({ error: 'Authentication required' });
 		}
 	})
 

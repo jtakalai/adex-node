@@ -1,18 +1,13 @@
 'use strict'
 
 const express = require('express')
-const multer = require('multer')
-const web3 = require('web3')
-
 const router = express.Router()
-const storage = multer.memoryStorage()
-const upload = multer({ storage: storage })
 const ipfs = require('./../../services/ipfs/ipfs')
 const Bids = require('./../../models/bids')
 const redisClient = require('./../../redisInit')
 
 router.post('/bids', (req, res) => {
-    let bid = req.body
+    const bid = req.body
 
     Bids.placeBid({ bid: bid, user: req.user })
         .then((dbBid) => {
@@ -26,9 +21,8 @@ router.post('/bids', (req, res) => {
 })
 
 router.get('/bids', (req, res) => {
-    let bid = req.body
-    let query = req.query
-    let user = req.user
+    const query = req.query
+    const user = req.user
     let action = null
 
     //NOTE: unit and slot because of adblocker
@@ -56,8 +50,7 @@ router.get('/bids', (req, res) => {
 })
 
 router.post('/bid-state', (req, res) => {
-    let bid = req.body
-    let query = req.query
+    const query = req.query
 
     Bids.addUnconfirmedState({ bidId: query.bidId, state: query.state, trHash: query.trHash, user: req.user })
         .then((result) => {
@@ -77,7 +70,7 @@ const getReportsStats = (bid) => {
                 return reject(err)
             }
 
-            var clicks = 0
+            let clicks = 0
             Object.values(result || {}).forEach(function (element) {
                 clicks += parseInt(element)
             })

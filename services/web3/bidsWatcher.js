@@ -219,7 +219,7 @@ const mapEventToDbOperations = (ev) => {
 const updateDbBids = (events = []) => {
     let bulkWriteEvents = events.reduce((memo, ev) => {
 
-        // NOTE: In meinnet thre are some undefined events
+        // NOTE: In mainnet there are some undefined events
         if (ev && ev.event && ev.returnValues && typeof ev.returnValues === 'object') {
             let event = {
                 address: ev.address,

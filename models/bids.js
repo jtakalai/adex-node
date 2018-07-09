@@ -1,7 +1,6 @@
 'use strict'
 
 const db = require('./../mongoConnection').getDb()
-const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 const Items = require('./items')
@@ -17,11 +16,10 @@ class Bids {
         return this.addBidToDb({ user: user, bid: bid })
     }
 
-    addBidToDb({ user, bid, createdOn }) {
+    addBidToDb({ user, bid }) {
         return new Promise((resolve, reject) => {
             let bidInst = new Bid(bid)
-            let typedData = bidInst.typed
-            let signature = bidInst.signature
+            const signature = bidInst.signature
 
             getAddrFromSignedMsg({ sigMode: signature.sig_mode, signature: signature.signature, typedData: bidInst.typed, hash: signature.hash })
                 .then((signAddr) => {
@@ -58,7 +56,7 @@ class Bids {
 
                                 let dbBid = bidInst.plainObj()
 
-                                //Only db props (not neede in the modedl yet)
+                                //Only db props (not needed in the modedl yet)
                                 dbBid.unconfirmedStateId = BID_STATES.DoesNotExist.id
                                 dbBid.unconfirmedStateTrHash = null
                                 dbBid.unconfirmedStateTime = 0 // TODO: set some timeout for confirmation
@@ -123,13 +121,9 @@ class Bids {
     // Bids for adslot adview (iframe)
     getActiveBidsAdUnitsForSlot({ adSlot }) {
         let query = {
-            //NOTE: the query when everything works
             _state: BID_STATES.Accepted.id,
             _adSlot: adSlot, // SLOT ipfs from web3 event
-            $expr: { $lt: ["$clicksCount", "$_target"] },
-
-            //TEMP query
-            // _adSlotId: { $ne: null }
+            $expr: { $lt: ["$clicksCount", "$_target"] }
         }
 
         let project = {
@@ -204,7 +198,7 @@ class Bids {
 
         query = Object.assign(query, { _id: bidId })
 
-        console.log('query', query)
+        // console.log('query', query)
         let update = {
             $set: {
                 unconfirmedStateId: state,
