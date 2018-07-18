@@ -99,7 +99,7 @@ class Bids {
         return this.getBids(query)
     }
 
-    getNotAcceptedBidsBySizeTypeAndTags({ sizeAndType, user, queryTags }) {
+    getNotAcceptedBids({ sizeAndType, user, queryTags }) {
         // Tags are seperated by comma in a string
         queryTags = queryTags.split(',')
 
