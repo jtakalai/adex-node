@@ -52,7 +52,9 @@ class Bids {
                                 bidInst.clicksCount = 0 // Ensure it is 0 on creation 
 
                                 // Add tags
-                                bidInst.tags = bid.tags
+                                if (bid.tags.constructor === Array) {
+                                    bidInst.tags = bid.tags
+                                }
 
                                 if (bidInst.id !== bidInst.signature.hash) {
                                     return reject('Invalid bid hash (id)')
@@ -97,10 +99,14 @@ class Bids {
         return this.getBids(query)
     }
 
-    getNotAcceptedBidsBySizeAndType({ sizeAndType, user }) {
+    getNotAcceptedBidsBySizeTypeAndTags({ sizeAndType, user, queryTags }) {
+        // Tags are seperated by comma in a string
+        queryTags = queryTags.split(',')
+
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
+            '$or': [{tags: {'$exists': false}}, {tags: {'$in': queryTags}}],
             _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
             _advertiser: { $ne: user }, // TODO: keep all addresses in lower case
@@ -168,16 +174,6 @@ class Bids {
                     return resolve(result)
                 })
         })
-    }
-
-    filterBidsByTags(bids, tags) {
-        tags = tags.split(',')
-        bids = bids.filter(bid =>
-            bid.tags ?
-            bid.tags.some(tag => tags.includes(tag)) :
-            null
-        )
-        return bids;
     }
 
     addClicksToBid({ id, clicks = 1 }) {
