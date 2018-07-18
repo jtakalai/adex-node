@@ -40,7 +40,9 @@ router.get('/bids', (req, res) => {
 
     action
         .then((dbBid) => {
-            // console.log('db getBids', dbBid)
+            if (query.tags) {
+                dbBid = Bids.filterBidsByTags(dbBid, query.tags)
+            }
             res.send(dbBid)
         })
         .catch((err) => {
