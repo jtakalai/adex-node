@@ -124,4 +124,15 @@ router.get('/collection', (req, res) => {
         })
 })
 
+router.get('/tags', (req, res) => {
+    Items.getAllTags()
+        .then((tags) => {
+            res.send(tags)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.status(500).send(err)
+        })
+})
+
 module.exports = router

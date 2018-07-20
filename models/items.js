@@ -8,7 +8,7 @@ const { Item, Models } = require('adex-models')
 
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
-
+const tagsCollection = db.collection('tags')
 class Items {
     getCollectionByItemType(type) {
         if (type === 'items') return itemsCollection
@@ -20,7 +20,7 @@ class Items {
         let ipfsMeta = item._meta
         ipfsMeta.createdOn = createdOn
         ipfsMeta.owner = user
-
+        
         if (constants.items.ItemIpfsByTypeId[item._type]) {
             return ipfs.addFileToIpfs(JSON.stringify(ipfsMeta))
                 .then((itemIpfs) => {
@@ -29,6 +29,28 @@ class Items {
         } else {
             return this.addItemToDb({ user: user, item: item, meta: ipfsMeta, createdOn: createdOn })
         }
+    }
+
+    addItemTagsToDb(tags) {
+        // Making sure tags is existing array before performing operation
+            tags = tags.map((tag) => {
+                return {
+                    _id: tag
+                }
+            })
+            return new Promise((resolve, reject) => {
+                tagsCollection.insertMany(
+                    tags,
+                    (err, result) => {
+                        if (err) {
+                            console.error('addItemTagsToDb', err)
+                            return reject(err)
+                        }
+
+                        return resolve(result)
+                    }
+                )
+            })
     }
 
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
@@ -51,8 +73,7 @@ class Items {
                         console.log('insertOne err', err)
                         return reject(err)
                     }
-
-                    return resolve(dbItem)
+                    return this.addItemTagsToDb(dbItem._meta.tags)
                 })
         })
     }
@@ -105,6 +126,21 @@ class Items {
             query: { user: user, _id: ObjectId(item) },
             dbAction: dbAction,
             returnOriginal: false
+        })
+    }
+
+    getAllTags() {
+        return new Promise((resolve, reject) => {
+            tagsCollection
+                .find()
+                .toArray((err, result) => {
+                    if (err) {
+                        console.log('getAllTags err', err)
+                        return reject(err)
+                    }
+
+                    return resolve(result)
+                })
         })
     }
 

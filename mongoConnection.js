@@ -10,11 +10,11 @@ var dbSecondary1 = process.env.MONGO_SECONDARY1 || 'testcluster0-shard-00-02-xy2
 var dbSecondary2 = process.env.MONGO_SECONDARY2 || 'testcluster0-shard-00-02-xy29f.mongodb.net'
 var dbReplicaSet = process.env.MONGO_REPLICASET || 'TestCluster0-shard-0'
 
-var uri = 'mongodb://' + dbUser + ':' + dbPassword + '@' + dbPrimary + ":" + dbPort + ',' +
-           dbSecondary1 + ":" + dbPort + ',' + dbSecondary2 + ":" + dbPort +',' +
-           '/test?ssl=true&replicaSet=' + dbReplicaSet + '&authSource=admin'
+// var uri = 'mongodb://' + dbUser + ':' + dbPassword + '@' + dbPrimary + ":" + dbPort + ',' +
+//            dbSecondary1 + ":" + dbPort + ',' + dbSecondary2 + ":" + dbPort +',' +
+//            '/test?ssl=true&replicaSet=' + dbReplicaSet + '&authSource=admin'
 
-// var uri = 'mongodb://localhost:27017/'
+var uri = 'mongodb://localhost:27017/'
 
 const dbName = 'adexnode'
 const Indexing = require('./models/indexing')
