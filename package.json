@@ -16,7 +16,7 @@
   "license": "MIT",
   "homepage": "https://bitbucket.org/stremio/adex-node#readme",
   "dependencies": {
-    "adex-constants": "1.0.9",	
+    "adex-constants": "1.0.9",
     "adex-models": "1.0.7",
     "body-parser": "^1.18.2",
     "cluster": "^0.7.7",
