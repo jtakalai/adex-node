@@ -32,7 +32,7 @@ class Items {
     }
 
     addItemTagsToDb(tags) {
-        // Making sure tags is existing array before performing operation
+        // Making sure tags is existing array before performing operation 
             tags ?
             tags = tags.map((tag) => {
                 if (tag.length > constants.items.TAGS_MAX_LENGTH || !tag.match(constants.items.TagsRegex)) {
@@ -72,7 +72,9 @@ class Items {
             dbItem.user = user
             dbItem.sizeAndType = itemInst.sizeAndType
             delete dbItem._id
-
+            if (!dbItem._meta.tags) {
+                reject('Error! Cannot insert item without tags.')
+            }
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[item._type])
                 .insertOne(dbItem, (err, result) => {
                     if (err) {
