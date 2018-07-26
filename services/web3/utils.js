@@ -10,7 +10,7 @@ const getAddrFromPersonalSignedMsg = ({ signature, hash, msg, prefixed = false }
         // Currently we use personalMessahe hash for adview signature and it comes as msg
         // TODO: make it consistent
         const recoverFrom = hash || web3.eth.accounts.hashMessage(msg)
-        const prefixed = !hash || prefixed //NOTE: TEMP - When signed from adex-view
+        prefixed = !hash || prefixed //NOTE: TEMP - When signed from adex-view
 
         let user
         try {
@@ -79,6 +79,7 @@ getAddrFromSignedMsg = ({ sigMode, signature, hash, typedData, msg }) => {
             return getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
         case SIGN_TYPES.Trezor.id:
             // Trezor
+            // return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg: msg })
             return getAddrFromTrezorSignedMsg({ signature: signature, hash: hash })
         default:
             return Promise.reject('Invalid signature mode!')
