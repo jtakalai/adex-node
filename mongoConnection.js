@@ -19,6 +19,14 @@ var uri = 'mongodb://localhost:27017/adexnode'
 const dbName = 'adexnode'
 const Indexing = require('./models/indexing')
 
+const predefinedTags = [
+    {"_id": "tag1"},
+    {"_id": "tag2"},
+    {"_id": "tag3"},
+    {"_id": "tag4"},
+    {"_id": "tag5"}
+]
+
 let db = null
 
 function connect(cb) {
@@ -31,6 +39,12 @@ function connect(cb) {
             db = client.db(dbName)
 
             Indexing.createIndexes(db)
+
+            // db.collection('tags').insertMany(predefinedTags, (err, res) => {
+            //     if (err) {
+            //         console.log(err);
+            //     }
+            // })
         }
 
         return cb(err)
