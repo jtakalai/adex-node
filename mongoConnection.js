@@ -1,6 +1,7 @@
 'use strict'
 
 const MongoClient = require('mongodb').MongoClient
+const PredefinedTags = require('./predefinedTags').PredefinedTags
 
 var dbPort = process.env.MONGO_PORT || 27017;
 var dbPassword = process.env.MONGO_PASSWD || 'oCeigu2thah7zaepeer8Lohhahng2iod';
@@ -19,14 +20,6 @@ var uri = 'mongodb://localhost:27017/adexnode'
 const dbName = 'adexnode'
 const Indexing = require('./models/indexing')
 
-const predefinedTags = [
-    {"_id": "tag1"},
-    {"_id": "tag2"},
-    {"_id": "tag3"},
-    {"_id": "tag4"},
-    {"_id": "tag5"}
-]
-
 let db = null
 
 function connect(cb) {
@@ -40,11 +33,11 @@ function connect(cb) {
 
             Indexing.createIndexes(db)
 
-            // db.collection('tags').insertMany(predefinedTags, (err, res) => {
-            //     if (err) {
-            //         console.log(err);
-            //     }
-            // })
+            db.collection('tags').insertMany(PredefinedTags, (err, res) => {
+                if (err) {
+                    console.log(err);
+                }
+            })
         }
 
         return cb(err)
