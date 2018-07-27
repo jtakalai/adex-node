@@ -35,11 +35,10 @@ class Items {
         // Making sure tags is existing array before performing operation 
             tags ?
             tags = tags.map((tag) => {
-                if (tag.length > constants.items.TAGS_MAX_LENGTH || !tag.match(constants.items.TagsRegex)) {
-                    return null;
-                }
-                return {
-                    _id: tag
+                if (tag.match(constants.items.TagsRegex)) {
+                    return {
+                        _id: tag
+                    }
                 }
             }) :
             tags = []
