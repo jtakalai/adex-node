@@ -38,7 +38,7 @@ class Items {
         // Making sure tags is existing array before performing operation 
             tags ?
             tags = tags.map((tag) => {
-                if (tag.match(constants.items.ACInputRegex)) {
+                if (tag.match(constants.items.ACTagsRegex)) {
                     return {
                         _id: tag
                     }
