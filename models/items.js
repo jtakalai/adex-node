@@ -9,6 +9,9 @@ const { Item, Models } = require('adex-models')
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
 const tagsCollection = db.collection('tags')
+
+const allowNewTags = process.env.ALLOW_NEW_TAGS || 'true'
+
 class Items {
     getCollectionByItemType(type) {
         if (type === 'items') return itemsCollection
@@ -31,32 +34,32 @@ class Items {
         }
     }
 
-    // addItemTagsToDb(tags) {
-    //     // Making sure tags is existing array before performing operation 
-    //         tags ?
-    //         tags = tags.map((tag) => {
-    //             if (tag.match(constants.items.ACInputRegex)) {
-    //                 return {
-    //                     _id: tag
-    //                 }
-    //             }
-    //         }) :
-    //         tags = []
-    //         return new Promise((resolve, reject) => {
-    //             tagsCollection.insertMany(
-    //                 tags,
-    //                 {ordered: false},
-    //                 (err, result) => {
-    //                     if (err) {
-    //                         console.error('addItemTagsToDb', err)
-    //                         return reject(err)
-    //                     }
+    addItemTagsToDb(tags) {
+        // Making sure tags is existing array before performing operation 
+            tags ?
+            tags = tags.map((tag) => {
+                if (tag.match(constants.items.ACInputRegex)) {
+                    return {
+                        _id: tag
+                    }
+                }
+            }) :
+            tags = []
+            return new Promise((resolve, reject) => {
+                tagsCollection.insertMany(
+                    tags,
+                    {ordered: false},
+                    (err, result) => {
+                        if (err) {
+                            console.error('addItemTagsToDb', err)
+                            return reject(err)
+                        }
 
-    //                     return resolve(result)
-    //                 }
-    //             )
-    //         })
-    // }
+                        return resolve(result)
+                    }
+                )
+            })
+    }
 
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
         return new Promise((resolve, reject) => {
@@ -80,8 +83,10 @@ class Items {
                         console.log('insertOne err', err)
                         return reject(err)
                     }
+                    if (allowNewTags === 'true') {
+                        return this.addItemTagsToDb(dbItem._meta.tags)
+                    }
                     return resolve(result)
-                    // return this.addItemTagsToDb(dbItem._meta.tags)
                 })
         })
     }
