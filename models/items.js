@@ -10,7 +10,7 @@ const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
 const tagsCollection = db.collection('tags')
 
-const allowNewTags = process.env.ALLOW_NEW_TAGS || 'true'
+const allowNewTags = process.env.ALLOW_NEW_TAGS || 'false'
 
 class Items {
     getCollectionByItemType(type) {
