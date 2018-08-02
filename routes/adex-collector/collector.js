@@ -14,11 +14,11 @@ const pid = process.pid
 
 const MSECS_IN_SEC = 1000
 
-const TIME_INTERVAL_LIVE = 5 * 60 * MSECS_IN_SEC // 5 min 
-const EXPIRY_INTERVAL_LIVE = 24 * 60 * 60 * MSECS_IN_SEC // 24 hours 
+const TIME_INTERVAL_LIVE = 5 * 60 * MSECS_IN_SEC // 5 min
+const EXPIRY_INTERVAL_LIVE = 24 * 60 * 60 * MSECS_IN_SEC // 24 hours
 
-const TIME_INTERVAL_HOURLY = 60 * 60 * MSECS_IN_SEC // 1 hour 
-const EXPIRY_INTERVAL_HOURLY = 31 * 24 * 60 * 60 * MSECS_IN_SEC // 31 days 
+const TIME_INTERVAL_HOURLY = 60 * 60 * MSECS_IN_SEC // 1 hour
+const EXPIRY_INTERVAL_HOURLY = 31 * 24 * 60 * 60 * MSECS_IN_SEC // 31 days
 
 const TIME_INTERVAL_DAILY = 24 * 60 * 60 * MSECS_IN_SEC // 24 hours
 const EXPIRY_INTERVAL_DAILY = 0 // NO EXPIRY
@@ -102,7 +102,7 @@ const mapStatsResultsGrouped = ({ stats, replies, timeIntervals, intervalType, i
     return mapped
 }
 
-// TODO: Promisify 
+// TODO: Promisify
 const getEventsByPeriod = ({ bid, start, end, cb }) => {
     const now = Date.now()
     let liveData = { actions: [], timeIntervals: [] }

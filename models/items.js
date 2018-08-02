@@ -5,6 +5,7 @@ const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 const { Item, Models } = require('adex-models')
+const predefinedTags = require('../predefinedTags').PredefinedTags
 
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
@@ -23,7 +24,7 @@ class Items {
         let ipfsMeta = item._meta
         ipfsMeta.createdOn = createdOn
         ipfsMeta.owner = user
-        
+
         if (constants.items.ItemIpfsByTypeId[item._type]) {
             return ipfs.addFileToIpfs(JSON.stringify(ipfsMeta))
                 .then((itemIpfs) => {
@@ -35,19 +36,18 @@ class Items {
     }
 
     addItemTagsToDb(tags) {
-        // Making sure tags is existing array before performing operation 
+        // Making sure tags is existing array before performing operation
+            let newTags = [];
             tags ?
-            tags = tags.map((tag) => {
+            newTags = tags.filter((tag) => {
                 if (tag.match(constants.items.ACTagsRegex)) {
-                    return {
-                        _id: tag
-                    }
+                    return tag
                 }
             }) :
-            tags = []
+            null
             return new Promise((resolve, reject) => {
                 tagsCollection.insertMany(
-                    tags,
+                    newTags,
                     {ordered: false},
                     (err, result) => {
                         if (err) {
@@ -143,12 +143,14 @@ class Items {
     }
 
     getAllTags() {
+        if (!allowNewTags) {
+            return predefinedTags
+        }
         return new Promise((resolve, reject) => {
             tagsCollection
                 .find()
                 .toArray((err, result) => {
                     if (err) {
-                        console.log('getAllTags err', err)
                         return reject(err)
                     }
 

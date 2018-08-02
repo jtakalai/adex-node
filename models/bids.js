@@ -52,7 +52,7 @@ class Bids {
                                 bidInst.clicksCount = 0 // Ensure it is 0 on creation 
 
                                 // Add tags
-                                if (bid.tags.constructor === Array) {
+                                if (Array.isArray(bid.tags)) {
                                     bidInst.tags = bid.tags
                                 }
 
