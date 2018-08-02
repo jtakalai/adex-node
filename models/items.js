@@ -40,8 +40,8 @@ class Items {
             let newTags = [];
             tags ?
             newTags = tags.filter((tag) => {
-                if (tag.match(constants.items.ACTagsRegex)) {
-                    return tag
+                if (typeof tag === 'string' && tag.match(constants.items.ACTagsRegex)) {
+                    return true
                 }
             }) :
             null
