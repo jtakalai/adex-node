@@ -40,9 +40,7 @@ class Items {
             let newTags = [];
             tags ?
             newTags = tags.filter((tag) => {
-                if (typeof tag === 'string' && tag.match(constants.items.ACTagsRegex)) {
-                    return true
-                }
+                return typeof tag === 'string' && tag.match(constants.items.ACTagsRegex)
             }) :
             null
             return new Promise((resolve, reject) => {
