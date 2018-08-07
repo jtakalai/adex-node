@@ -40,7 +40,7 @@ class Items {
         let newTags = []
         if (Array.isArray(tags)) {
             newTags = tags.filter((tag) => {
-                return constants.items.ACTagsRegex.test(tag)
+                return !!(tag || '').match(constants.items.ACTagsRegex)
             })
         }
 
