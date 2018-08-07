@@ -101,12 +101,12 @@ class Bids {
 
     getNotAcceptedBids({ sizeAndType, user, queryTags }) {
         // Tags are seperated by comma in a string
-        queryTags = queryTags.split(',')
+        queryTags = (queryTags || '').split(',')
 
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
-            '$or': [{tags: {'$exists': false}}, {tags: {'$in': queryTags}}],
+            '$or': [{ tags: { '$exists': false } }, { tags: { '$in': queryTags } }],
             _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
             _advertiser: { $ne: user }, // TODO: keep all addresses in lower case

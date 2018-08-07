@@ -11,7 +11,7 @@ const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
 const tagsCollection = db.collection('tags')
 
-const allowNewTags = process.env.ALLOW_NEW_TAGS || 'false'
+const allowNewTags = process.env.ALLOW_NEW_TAGS || false
 
 class Items {
     getCollectionByItemType(type) {
@@ -37,26 +37,26 @@ class Items {
 
     addItemTagsToDb(tags) {
         // Making sure tags is existing array before performing operation
-            let newTags = [];
-            tags ?
+        let newTags = []
+        if (Array.isArray(tags)) {
             newTags = tags.filter((tag) => {
                 return constants.items.ACTagsRegex.test(tag)
-            }) :
-            null
-            return new Promise((resolve, reject) => {
-                tagsCollection.insertMany(
-                    newTags,
-                    {ordered: false},
-                    (err, result) => {
-                        if (err) {
-                            console.error('addItemTagsToDb', err)
-                            return reject(err)
-                        }
-
-                        return resolve(result)
-                    }
-                )
             })
+        }
+
+        return new Promise((resolve, reject) => {
+            tagsCollection.insertMany(
+                newTags,
+                (err, result) => {
+                    if (err) {
+                        console.error('addItemTagsToDb', err)
+                        return reject(err)
+                    }
+
+                    return resolve(result)
+                }
+            )
+        })
     }
 
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
@@ -73,7 +73,7 @@ class Items {
             dbItem.sizeAndType = itemInst.sizeAndType
             delete dbItem._id
             if (!dbItem._meta.tags) {
-                reject('Error! Cannot insert item without tags.')
+                return reject('Error! Cannot insert item without tags.')
             }
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[item._type])
                 .insertOne(dbItem, (err, result) => {
@@ -144,6 +144,7 @@ class Items {
         if (!allowNewTags) {
             return predefinedTags
         }
+        
         return new Promise((resolve, reject) => {
             tagsCollection
                 .find()
