@@ -141,11 +141,12 @@ class Items {
     }
 
     getAllTags() {
-        if (!allowNewTags) {
-            return predefinedTags
-        }
-        
         return new Promise((resolve, reject) => {
+
+            if (!allowNewTags) {
+                return resolve(predefinedTags)
+            }
+
             tagsCollection
                 .find()
                 .toArray((err, result) => {

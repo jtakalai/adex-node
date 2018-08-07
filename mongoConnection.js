@@ -31,7 +31,7 @@ function connect(cb) {
 
             Indexing.createIndexes(db)
 
-            db.collection('tags').insertMany(PredefinedTags, (err, res) => {
+            db.collection('tags').insertMany(PredefinedTags, { ordered: false }, (err, res) => {
                 if (err) {
                     console.log('Insert PredefinedTags err', err)
                 }
