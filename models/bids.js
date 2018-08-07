@@ -8,11 +8,12 @@ const { Bid } = require('adex-models')
 const { getAddrFromSignedMsg } = require('./../services/web3/utils')
 
 const bidsCollection = db.collection('bids')
+
 const { BID_STATES } = constants.exchange
 
 class Bids {
     placeBid({ bid, user }) {
-        console.log('bid', bid)
+        // console.log('bid', bid)
         return this.addBidToDb({ user: user, bid: bid })
     }
 
@@ -29,8 +30,8 @@ class Bids {
                             .then((unit) => {
                                 if (!unit) return reject('invalid ad unit')
 
-                                console.log('unit', unit)
-                                console.log('bidInst', bidInst)
+                                // console.log('unit', unit)
+                                // console.log('bidInst', bidInst)
 
                                 bidInst.state = BID_STATES.DoesNotExist.id
                                 bidInst.createdOn = Date.now() // bidInst.opened ?
@@ -49,6 +50,11 @@ class Bids {
                                 //Db only
                                 bidInst.sizeAndType = unit.sizeAndType // index
                                 bidInst.clicksCount = 0 // Ensure it is 0 on creation 
+
+                                // Add tags
+                                if (Array.isArray(bid.tags)) {
+                                    bidInst.tags = bid.tags
+                                }
 
                                 if (bidInst.id !== bidInst.signature.hash) {
                                     return reject('Invalid bid hash (id)')
@@ -93,10 +99,14 @@ class Bids {
         return this.getBids(query)
     }
 
-    getNotAcceptedBidsBySizeAndType({ sizeAndType, user }) {
+    getNotAcceptedBids({ sizeAndType, user, queryTags }) {
+        // Tags are seperated by comma in a string
+        queryTags = (queryTags || '').split(',')
+
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
+            '$or': [{ tags: { '$exists': false } }, { tags: { '$in': queryTags } }],
             _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
             _advertiser: { $ne: user }, // TODO: keep all addresses in lower case

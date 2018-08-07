@@ -5,9 +5,13 @@ const ipfs = require('./../services/ipfs/ipfs')
 const constants = require('adex-constants')
 const ObjectId = require('mongodb').ObjectId
 const { Item, Models } = require('adex-models')
+const predefinedTags = require('../predefinedTags').PredefinedTags
 
 const itemsCollection = db.collection('items')
 const itemsCollectionCollection = db.collection('items_collection')
+const tagsCollection = db.collection('tags')
+
+const allowNewTags = process.env.ALLOW_NEW_TAGS || false
 
 class Items {
     getCollectionByItemType(type) {
@@ -31,6 +35,30 @@ class Items {
         }
     }
 
+    addItemTagsToDb(tags) {
+        // Making sure tags is existing array before performing operation
+        let newTags = []
+        if (Array.isArray(tags)) {
+            newTags = tags.filter((tag) => {
+                return !!(tag || '').match(constants.items.ACTagsRegex)
+            })
+        }
+
+        return new Promise((resolve, reject) => {
+            tagsCollection.insertMany(
+                newTags,
+                (err, result) => {
+                    if (err) {
+                        console.error('addItemTagsToDb', err)
+                        return reject(err)
+                    }
+
+                    return resolve(result)
+                }
+            )
+        })
+    }
+
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
         return new Promise((resolve, reject) => {
             let sizeAndType = Item.sizeAndType({ adType: meta.adType, size: meta.size })
@@ -44,15 +72,19 @@ class Items {
             dbItem.user = user
             dbItem.sizeAndType = itemInst.sizeAndType
             delete dbItem._id
-
+            if (!dbItem._meta.tags) {
+                return reject('Error! Cannot insert item without tags.')
+            }
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[item._type])
                 .insertOne(dbItem, (err, result) => {
                     if (err) {
                         console.log('insertOne err', err)
                         return reject(err)
                     }
-
-                    return resolve(dbItem)
+                    if (allowNewTags === 'true') {
+                        return this.addItemTagsToDb(dbItem._meta.tags)
+                    }
+                    return resolve(result)
                 })
         })
     }
@@ -105,6 +137,25 @@ class Items {
             query: { user: user, _id: ObjectId(item) },
             dbAction: dbAction,
             returnOriginal: false
+        })
+    }
+
+    getAllTags() {
+        return new Promise((resolve, reject) => {
+
+            if (!allowNewTags) {
+                return resolve(predefinedTags)
+            }
+
+            tagsCollection
+                .find()
+                .toArray((err, result) => {
+                    if (err) {
+                        return reject(err)
+                    }
+
+                    return resolve(result)
+                })
         })
     }
 

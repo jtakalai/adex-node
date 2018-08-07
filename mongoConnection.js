@@ -1,6 +1,7 @@
 'use strict'
 
 const MongoClient = require('mongodb').MongoClient
+const PredefinedTags = require('./predefinedTags').PredefinedTags
 
 var dbPort = process.env.MONGO_PORT || 27017;
 var dbPassword = process.env.MONGO_PASSWD || 'oCeigu2thah7zaepeer8Lohhahng2iod';
@@ -11,8 +12,8 @@ var dbSecondary2 = process.env.MONGO_SECONDARY2 || 'testcluster0-shard-00-02-xy2
 var dbReplicaSet = process.env.MONGO_REPLICASET || 'TestCluster0-shard-0'
 
 var uri = 'mongodb://' + dbUser + ':' + dbPassword + '@' + dbPrimary + ":" + dbPort + ',' +
-           dbSecondary1 + ":" + dbPort + ',' + dbSecondary2 + ":" + dbPort +',' +
-           '/test?ssl=true&replicaSet=' + dbReplicaSet + '&authSource=admin'
+    dbSecondary1 + ":" + dbPort + ',' + dbSecondary2 + ":" + dbPort + ',' +
+    '/test?ssl=true&replicaSet=' + dbReplicaSet + '&authSource=admin'
 
 const dbName = 'adexnode'
 const Indexing = require('./models/indexing')
@@ -25,10 +26,16 @@ function connect(cb) {
             console.log('MongoDb connection error', err)
         } else {
 
-            console.log("Connected successfully to server")
+            console.log('Connected successfully to server')
             db = client.db(dbName)
 
             Indexing.createIndexes(db)
+
+            db.collection('tags').insertMany(PredefinedTags, { ordered: false }, (err, res) => {
+                if (err) {
+                    console.log('Insert PredefinedTags err', err)
+                }
+            })
         }
 
         return cb(err)
