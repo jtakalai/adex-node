@@ -26,7 +26,7 @@ router.post('/items', (req, res) => {
 
     Items.addItem(item, req.user)
         .then((itm) => {
-            console.log('db item', itm)
+            // console.log('db item', itm)
             res.send(itm)
         })
         .catch((err) => {

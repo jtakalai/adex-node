@@ -61,7 +61,7 @@ class Items {
 
     addItemToDb({ user, item, meta, ipfs = '', createdOn }) {
         return new Promise((resolve, reject) => {
-            let sizeAndType = Item.sizeAndType({ adType: meta.adType, size: meta.size })
+            // let sizeAndType = Item.sizeAndType({ adType: meta.adType, size: meta.size })
 
             item._meta = meta
             let itemInst = new Models.itemClassByTypeId[item._type](item)
@@ -72,19 +72,24 @@ class Items {
             dbItem.user = user
             dbItem.sizeAndType = itemInst.sizeAndType
             delete dbItem._id
-            if (!dbItem._meta.tags) {
+
+            const hasTags = constants.items.ItemTypeByTypeId[item._type] === 'items'
+
+            if (hasTags && !dbItem._meta.tags) {
                 return reject('Error! Cannot insert item without tags.')
             }
+
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[item._type])
                 .insertOne(dbItem, (err, result) => {
                     if (err) {
                         console.log('insertOne err', err)
                         return reject(err)
                     }
-                    if (allowNewTags === 'true') {
-                        return this.addItemTagsToDb(dbItem._meta.tags)
+                    if (hasTags && allowNewTags === 'true') {
+                        this.addItemTagsToDb(dbItem._meta.tags)
                     }
-                    return resolve(result)
+
+                    return resolve(dbItem)
                 })
         })
     }
