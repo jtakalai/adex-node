@@ -275,7 +275,11 @@ class Items {
         dbItem.sizeAndType = itemInst.sizeAndType
         delete dbItem._id
 
-        return dbItem
+        let dbAction = {
+            $set: dbItem
+        }
+
+        return dbAction
     }
 
     updateOneItem({ collection, query, dbAction, returnOriginal = false }) {
@@ -296,7 +300,7 @@ class Items {
                             return reject(err)
                         }
 
-                        console.log('addItemToItem', res.value)
+                        console.log('updateOneItem', res.value)
                         return resolve(res.value || {})
                     })
         })
