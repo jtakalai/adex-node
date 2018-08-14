@@ -1,7 +1,6 @@
 'use strict'
 
 const MongoClient = require('mongodb').MongoClient
-const PredefinedTags = require('./predefinedTags').PredefinedTags
 
 var dbPort = process.env.MONGO_PORT || 27017;
 var dbPassword = process.env.MONGO_PASSWD || 'oCeigu2thah7zaepeer8Lohhahng2iod';
@@ -30,12 +29,6 @@ function connect(cb) {
             db = client.db(dbName)
 
             Indexing.createIndexes(db)
-
-            db.collection('tags').insertMany(PredefinedTags, { ordered: false }, (err, res) => {
-                if (err) {
-                    console.log('Insert PredefinedTags err', err)
-                }
-            })
         }
 
         return cb(err)
