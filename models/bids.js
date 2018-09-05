@@ -99,19 +99,22 @@ class Bids {
         return this.getBids(query)
     }
 
-    getNotAcceptedBids({ sizeAndType, user, queryTags }) {
+    getNotAcceptedBids({ sizeAndType, user, queryTags, filterByTags }) {
         // Tags are seperated by comma in a string
-        queryTags = (queryTags || '').split(',')
+        queryTags = (queryTags || '').split(',').filter(t => !!t)
 
         // NOTE: we can send adSlot id, get the slot, get the size and type index but that way is faster
         let query = {
             sizeAndType: parseInt(sizeAndType),
-            '$or': [{ tags: { '$exists': false } }, { tags: { '$in': queryTags } }],
             _state: BID_STATES.DoesNotExist.id,
             _signature: { $exists: true },
             _advertiser: { $ne: user }, // TODO: keep all addresses in lower case
             // unconfirmedStateId: BID_STATES.Accepted.id
             // TODO: Maybe some timeout from  unconfirmedStateTime
+        }
+
+        if (filterByTags && queryTags) {
+            query.$or = [{ tags: { '$exists': false } }, { tags: { '$in': queryTags } }]
         }
 
         return this.getBids(query)

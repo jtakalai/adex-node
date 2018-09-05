@@ -31,7 +31,7 @@ router.get('/bids', (req, res) => {
     } else if (query.slot) {
         action = Bids.getSlotBids({ user: user, adSlot: query.slot })
     } else if (query.sizeAndType || query.sizeAndType === '0') {
-        action = Bids.getNotAcceptedBids({ sizeAndType: query.sizeAndType, user: user, queryTags: query.tags })
+        action = Bids.getNotAcceptedBids({ sizeAndType: query.sizeAndType, user: user, queryTags: query.tags, filterByTags: query.filterByTags === 'true' })
     } else if (query.side === 'advertiser') {
         action = Bids.getAdvertiserBids({ user: user })
     } else if (query.side === 'publisher') {
