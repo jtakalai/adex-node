@@ -48,6 +48,7 @@ router.get('/bids', (req, res) => {
         })
 })
 
+// TODO: change trHash wit txHash
 router.post('/bid-state', (req, res) => {
     const query = req.query
 

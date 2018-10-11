@@ -10,6 +10,8 @@ The AdEx Node is responsible for:
 
 For more information on why the adex-node exists, read [adex-core/STATE_CHANNELS.md](https://github.com/AdExBlockchain/adex-core/blob/master/STATE_CHANNELS.md) 
 
+Adex Node [endpoints](ENDPOINTS.md)
+
 Initial version to work with data generation scripts from 
 https://github.com/AdExBlockchain/adex-sample-data
 
