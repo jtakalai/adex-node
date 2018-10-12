@@ -1,11 +1,12 @@
 # AdEx node Endpoints
-    The AdEx node accepts and returns 'application/josn' content type
+The AdEx node accepts and returns 'application/josn' content type
+Production version of this node is running at [https://node.adex.network](https://node.adex.network)
 
 # Endpoints
 
 ## Non authentication required endpoints:
 
-## `/auth` - returns user session
+## `/auth`
 
 ```
 POST: 
@@ -13,112 +14,158 @@ POST:
         userid, 
         signature, 
         authToken, 
-        mode, // *adex-constants [exchange]
-        typedData, 
+        mode, *adex-constants [exchange]
+        typedData,
         hash, 
         prefixed
 ```
 `*`  [adex-constants [exchange]](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
 
+Returns user sessions in format 
+```
+{
+  "status": "OK",
+  "signature": "0xfd3360e247321a4126467e225d98e2ad299cb0eb99b5d3ec8d21f0e0a34deccd571f05b6aec9e21bb2274dba1a1aec826eeb6f5d7a40f497755061807006b2a51b",
+  "authToken": "4797227259654222",
+  "sigMode": 1,
+  "expiryTime": 1541927204484
+}
+
+```
+
 ## Authentication required endpoints:
 
-`'x-user-signature' header ` with user signature value is  required
+`'x-user-signature'` header with user signature value is  required
 
-### `/auth-check` - check if the request is authenticated
+### `/auth-check`
+check if the request is authenticated
 
 ### `/image` 
+
 ```
-POST (adds image to ipfs and returns ipfs hash):
+POST:
     Multipart form data with image field for the image blob
 ```
+Adds adds image to ipfs
+Returns ipfs hash in format
+```
+{ ipfs: 'QmeQqaZC1ftKp1uWbpVRVhbCwBBrysTa3DBg9JUr6NWrQx' }
+```
+Can be accessed through https://ipfs.adex.network/ipfs/QmeQqaZC1ftKp1uWbpVRVhbCwBBrysTa3DBg9JUr6NWrQx
+
+
 
 ### `/items`
 ```
-POST (add new item): 
+POST: 
     body params: *adex-models [items] 
 ```
 `*` [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
+Accepts: item object structured as models above
+Returns: parsed and verified item with id as the models
+
 ```
-PUT (update existing item):
+PUT:
     body params: *adex-models [items] 
-    entire item is required 
-    for AdUnit only 'description' can be updated
-    for AdSlot '_fallbackAdImg' , '_fallbackAdUrl' and '_meta.img' can be update in addition
 ```
 `*` [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
+Accepts: item model and updates it. Full item is required 
+* for AdUnit only 'description' can be updated
+* for AdSlot '_fallbackAdImg' , '_fallbackAdUrl' and '_meta.img' can be update in addition
+
+Returns: entire updated object
+
 ```
-GET (returns user's items):
+GET:
     query params:
         type: *adex-constants [items]
 ```
-
 `*`  [adex-constants [items]](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
+
+Returns: Array of user's [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
 ### `/items/:id`
 ```
-GET (returns item by id)
+GET
 ```
+Returns:  [adex-constants [items]](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
+ object
 
 ### `/item-to-item`
 ```
-POST (adds item to collection):
+POST:
     query params:
         item, user, type, collection
 ```
+Adds: item to collection
+Returns: updated item
+
 ```
-DELETE (removes item from collection):
+DELETE:
     query params:
         item, user, type, collection
 ```
+Removes: item from collection
+Returns: updated item
+
 
 ### `/tags`
 ```
-GET (returns all available tags)
+GET:
 ```
+Returns all available tags
 
 ### `/bids`
 ```
-POST (adds new bid):
+POST:
     body params: *adex-models [bid] 
 ```
 `*` [adex-models [bid]](https://github.com/AdExNetwork/adex-models/blob/master/src/models/Bid.js)
+Adds: Signed message for bid
+Accepts: Bid model
+Returns: Validated and parsed bid with id
+
 ```
-GET (returns bids by different query params):
+GET:
     query params:
         unit - returns bids by adUnit
         slot - returns bids by adSlot
         sizeAndType, tags(optional), filterByTags(optional) - returns not accepted bids by this filters  
         side - 'advertiser' or 'publisher'
 ```
+Returns: bids filtered by different query params
 
 ### `/bid-state`
 ```
-POST (updates bid state):
+POST:
     query params:
         bidId,
         state,
         trHash
 ```
+Updates: Bid unconfirmed state (not validated on the blockchain)
 
 ### `/bid-report`
 ```
-GET (returns bid report):
+GET:
     query params:
         bidId
 ```
+Returns: bid report
 
 ### `/view`
 ```
-GET (returns adUnits for active bids by slot ipfs hash):
+GET:
     query params:
         slotIpfs
 ```
+Returns: adUnits for active bids by slot ipfs hash
 
 ### `/submit`
 ```
-POST (submits events form adex-adview to collector):
+POST:
     body params:
         signature,
         sigMode,
@@ -127,3 +174,4 @@ POST (submits events form adex-adview to collector):
         adunit,
         bid
 ```
+Adds: events form adex-adview to the collector (off-chain event aggregator)
