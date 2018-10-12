@@ -19,7 +19,7 @@ POST:
         hash, 
         prefixed
 ```
-`*`[`adex-constants [exchange]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
+[`*adex-constants [exchange]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
 
 Returns user sessions in format 
 ```
@@ -59,7 +59,7 @@ Can be accessed through https://ipfs.adex.network/ipfs/QmeQqaZC1ftKp1uWbpVRVhbCw
 POST: 
     body params: *adex-models [items] 
 ```
-`*`[`adex-models [items]`](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
+[`*adex-models [items]`](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
 Accepts: item object structured as models above
 Returns: parsed and verified item with id as the models
@@ -67,7 +67,7 @@ Returns: parsed and verified item with id as the models
 PUT:
     body params: *adex-models [items] 
 ```
-`*`[`adex-models [items]`](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
+[`*adex-models [items]`](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
 Accepts: item model and updates it. Full item is required 
 * for AdUnit only 'description' can be updated
@@ -80,7 +80,7 @@ GET:
     query params:
         type: *adex-constants [items]
 ```
-`*`[`adex-constants [items]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
+[`*adex-constants [items]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
 
 Returns: Array of user's [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
@@ -120,7 +120,7 @@ Returns all available tags
 POST:
     body params: *adex-models [bid] 
 ```
-`*`[`adex-models [bid]`](https://github.com/AdExNetwork/adex-models/blob/master/src/models/Bid.js)
+[`*adex-models [bid]`](https://github.com/AdExNetwork/adex-models/blob/master/src/models/Bid.js)
 Adds: Signed message for bid
 Accepts: Bid model
 Returns: Validated and parsed bid with id
