@@ -3,6 +3,7 @@ The AdEx node accepts and returns 'application/josn' content type
 Production version of this node is running at [https://node.adex.network](https://node.adex.network)
 
 # Endpoints
+This endpoints are not finalized
 
 ## Non authentication required endpoints:
 
@@ -162,6 +163,7 @@ GET:
 Returns: adUnits for active bids by slot ipfs hash
 
 ### `/submit`
+[collector](COLLECTOR.md)
 ```
 POST:
     body params:
@@ -173,3 +175,68 @@ POST:
         bid
 ```
 Adds: events form adex-adview to the collector (off-chain event aggregator)
+
+### `/events`
+[collector](COLLECTOR.md)
+```
+GET:
+    query params:
+        bid, // bid ipfs hash
+        bids, // array of bids ipfs hashes
+        start, // UTC timestamp
+        end, // UTC timestamp
+        interval // Currently not in use
+```
+Returns: stats in format 
+```
+{
+  "bidsStats": {
+    "0xf7346a21a7c385bef04957885d67367d8ce13bd908bd4d4c32f7acfc36896157": {
+      "live": {
+        "clicks": 0,
+        "loaded": 0,
+        "uniqueClick": 0
+      },
+      "hourly": {
+        "clicks": 0,
+        "loaded": 0,
+        "uniqueClick": 0
+      },
+      "daily": {
+        "clicks": 0,
+        "loaded": 0,
+        "uniqueClick": 0
+      }
+    }
+  "stats": {
+    "live": {
+      "interval": 300000,
+      "intervalStats": {
+        
+      }
+    },
+    "hourly": {
+      "interval": 3600000,
+      "intervalStats": {
+        
+      }
+    },
+    "daily": {
+      "interval": 86400000,
+      "intervalStats": {
+        "17651": {
+          "clicks": 0,
+          "loaded": 0,
+          "uniqueClick": 0
+        },
+        "17652": {
+          "clicks": 0,
+          "loaded": 0,
+          "uniqueClick": 0
+        },
+       ...
+      }
+    }
+  }
+}
+```
