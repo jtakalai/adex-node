@@ -14,12 +14,12 @@ POST:
         userid, 
         signature, 
         authToken, 
-        mode, *adex-constants [exchange]
+        mode, *adex-constants [SIGN_TYPES]
         typedData,
         hash, 
         prefixed
 ```
-[`*adex-constants [exchange]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
+[`*adex-constants [SIGN_TYPES]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
 
 Returns user sessions in format 
 ```
@@ -80,7 +80,7 @@ GET:
     query params:
         type: *adex-constants [items]
 ```
-[`*adex-constants [items]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
+[`*adex-constants [ItemsTypes]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
 
 Returns: Array of user's [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
@@ -88,7 +88,7 @@ Returns: Array of user's [adex-models [items]](https://github.com/AdExNetwork/ad
 ```
 GET
 ```
-Returns:  [adex-constants [items]](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
+Returns: [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
  object
 
 ### `/item-to-item`
