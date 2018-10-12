@@ -3,11 +3,9 @@
 
 # Endpoints
 
- [`adex-constants`](https://github.com/AdExNetwork/adex-constants/blob/a83700fdba692b0fbdbf70504e407b7dca7f7c10/src/exchange.js)
+## Non authentication required endpoints:
 
- ## Non authentication required endpoints:
-
-* `/auth` - returns user session
+## `/auth` - returns user session
 
 ```
 POST: 
@@ -15,11 +13,12 @@ POST:
         userid, 
         signature, 
         authToken, 
-        mode, //adex-constants [exchange]
+        mode, // *adex-constants [exchange]
         typedData, 
         hash, 
         prefixed
 ```
+`*`  [adex-constants [exchange]](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
 
 ## Authentication required endpoints:
 
@@ -29,29 +28,33 @@ POST:
 
 ### `/image` 
 ```
-POST:
+POST (adds image to ipfs and returns ipfs hash):
     Multipart form data with image field for the image blob
 ```
 
 ### `/items`
 ```
 POST (add new item): 
-    body params - see adex-constants [items] 
+    body params: *adex-models [items] 
 ```
+`*` [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
 ```
 PUT (update existing item):
-    body params - see adex-constants [items] 
+    body params: *adex-models [items] 
     entire item is required 
     for AdUnit only 'description' can be updated
     for AdSlot '_fallbackAdImg' , '_fallbackAdUrl' and '_meta.img' can be update in addition
 ```
+`*` [adex-models [items]](https://github.com/AdExNetwork/adex-models/tree/master/src/models)
 
 ```
 GET (returns user's items):
     query params:
-        type - see adex-constants [items]
+        type: *adex-constants [items]
 ```
+
+`*`  [adex-constants [items]](https://github.com/AdExNetwork/adex-constants/blob/master/src/items.js)
 
 ### `/items/:id`
 ```
@@ -78,8 +81,9 @@ GET (returns all available tags)
 ### `/bids`
 ```
 POST (adds new bid):
-    body params - see adex-constants [bid] 
+    body params: *adex-models [bid] 
 ```
+`*` [adex-models [bid]](https://github.com/AdExNetwork/adex-models/blob/master/src/models/Bid.js)
 ```
 GET (returns bids by different query params):
     query params:
