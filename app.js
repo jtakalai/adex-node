@@ -32,8 +32,7 @@ const initApp = () => {
 	})
 
 	const signatureCheck = ((req, res, next) => {
-
-		// 
+		//
 		/*
 		 * NOTE: when use fetch first is sent OPTIONS req but it does not contains the values for the custom header (just as Access-Control-Request-Headers)
 		 * for some reason fetch mode 'cors' sends GET that acts like OPTIONS (no values for custom header)

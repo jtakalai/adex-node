@@ -81,6 +81,9 @@ getAddrFromSignedMsg = ({ sigMode, signature, hash, typedData, msg }) => {
             // Trezor
             // return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg: msg })
             return getAddrFromTrezorSignedMsg({ signature: signature, hash: hash })
+        case  SIGN_TYPES.Guest.id:
+            // Guest
+            return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg: msg })
         default:
             return Promise.reject('Invalid signature mode!')
     }
