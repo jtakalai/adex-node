@@ -51,7 +51,7 @@ router.put('/items', (req, res) => {
 })
 
 router.get('/items', (req, res) => {
-    Items.getUserItems(req.user, req.query.type)
+    Items.getUserItems(req.user, req.query.type, req.query.demo === 'true')
         .then((items) => {
             res.send(items)
         })

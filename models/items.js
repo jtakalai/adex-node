@@ -109,10 +109,19 @@ class Items {
         })
     }
 
-    getUserItems(user, type) {
+    getUserItems(user, type, demo) {
         return new Promise((resolve, reject) => {
+            const query = { _type: parseInt(type), _deleted: false }
+            let limit = 100
+            if (!demo) {
+                query.user = user
+                limit = 0
+            }
+
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
-                .find({ user: user, _type: parseInt(type), _deleted: false })
+                // .find({ user: user, _type: parseInt(type), _deleted: false })
+                .find(query)
+                .limit(limit)
                 .toArray((err, result) => {
                     if (err) {
                         console.log('find items err', err)

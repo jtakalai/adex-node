@@ -6,23 +6,30 @@ const ipfsProtocol = process.env.IPFSPROTOCOL || 'https'
 const ipfs = ipfsAPI(ipfsHost, ipfsPort, { protocol: ipfsProtocol })
 
 function addFileToIpfs(file) {
-    return new Promise((resolve, reject) => {
-        let buffer = Buffer.from(file)
-        ipfs.files.add(buffer)
-            .then(function (result) {
-                // console.log('addFileToIpfs result', result)
-                if (result[0]) {
-                    return resolve(result[0].hash)
-                } else {
-                    return reject('Error adding data to ipfs')
-                }
-            })
-            .catch(function (err) {
-                //TODO: Logger
-                console.log(err)
-                return reject('ipfs error', err)
-            })
-    })
+    let buffer = Buffer.from(file)
+    return ipfs.files.add(buffer)
+        .then(function (res) {
+            if (res[0]) {
+                return res[0].hash
+            } else {
+                throw new Error('Error adding data to ipfs')
+            }
+        })
+        .then((hash) => {
+            return ipfs.pin.add(hash)
+        })
+        .then((res) => {
+            if (res[0]) {
+                return res[0].hash
+            } else {
+                throw new Error('Error pin data to ipfs')
+            }
+        })
+        .catch(function (err) {
+            //TODO: Logger
+            console.error(err)
+            return reject('ipfs error', err)
+        })
 }
 
 module.exports = {
