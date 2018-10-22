@@ -14,7 +14,7 @@ var uri = 'mongodb://' + dbUser + ':' + dbPassword + '@' + dbPrimary + ":" + dbP
     dbSecondary1 + ":" + dbPort + ',' + dbSecondary2 + ":" + dbPort + ',' +
     '/test?ssl=true&replicaSet=' + dbReplicaSet + '&authSource=admin'
 
-// var uri = 'mongodb://localhost:27017/adexnode'
+var uri = 'mongodb://localhost:27017/adexnode'
 
 const dbName = 'adexnode'
 const Indexing = require('./models/indexing')
