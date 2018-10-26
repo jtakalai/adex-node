@@ -7,7 +7,7 @@ const Items = require('./items')
 const { Bid } = require('adex-models')
 const { getAddrFromSignedMsg } = require('./../services/web3/utils')
 
-const bidsCollection = db.collection('bids_v3_temp')
+const bidsCollection = db.collection('bids')
 
 const { BID_STATES } = constants.exchange
 
@@ -33,7 +33,7 @@ class Bids {
                                 // console.log('unit', unit)
                                 // console.log('bidInst', bidInst)
 
-                                bidInst.state = 0
+                                bidInst.state = BID_STATES.DoesNotExist.id
                                 bidInst.createdOn = Date.now() // bidInst.opened ?
                                 bidInst.adUnitId = ObjectId(bidInst.adUnitId)
                                 bidInst.advertiser = user.toLowerCase()
@@ -43,10 +43,9 @@ class Bids {
                                 *   This should be done by models but the moment they are used for updating the dapp input fields
                                 *   and that checks causes some problems.
                                 * */
-                                bidInst.goal = parseInt(bidInst.goal, 10)
+                                bidInst.target = parseInt(bidInst.target, 10)
                                 bidInst.timeout = parseInt(bidInst.timeout, 10) // in seconds
-                                bidInst.tokenAmount = bidInst.tokenAmount.toString()
-                                bidInst.tokenAddr  = bidInst.tokenAddr.toString()
+                                bidInst.amount = bidInst.amount.toString()
 
                                 //Db only
                                 bidInst.sizeAndType = unit.sizeAndType // index
