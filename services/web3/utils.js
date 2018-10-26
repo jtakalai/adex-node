@@ -2,7 +2,7 @@ const sigUtil = require('eth-sig-util')
 const ethereumjs = require('ethereumjs-util')
 const { toBuffer, ecrecover, pubToAddress } = ethereumjs
 const { web3, web3Utils } = require('./ADX')
-let { SIGN_TYPES } = require('adex-constants').exchange
+let { SIGNATURE_MODE } = require('adex-constants').exchange
 
 const getAddrFromPersonalSignedMsg = ({ signature, hash, msg, prefixed = false }) => {
     return new Promise((resolve, reject) => {
@@ -71,13 +71,13 @@ getAddrFromSignedMsg = ({ sigMode, signature, hash, typedData, msg }) => {
     console.log('sigMode', sigMode)
     switch (sigMode) {
 
-        case SIGN_TYPES.EthPersonal.id:
+        case SIGNATURE_MODE.GETH.id:
             // Ledger
             return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg: msg })
-        case SIGN_TYPES.Eip.id:
+        case SIGN_TYPES.EIP712.id:
             // Metamask
             return getAddrFromEipTypedSignedMsg({ signature: signature, typedData: typedData })
-        case SIGN_TYPES.Trezor.id:
+        case SIGN_TYPES.TREZOR.id:
             // Trezor
             // return getAddrFromPersonalSignedMsg({ signature: signature, hash: hash, msg: msg })
             return getAddrFromTrezorSignedMsg({ signature: signature, hash: hash })

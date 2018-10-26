@@ -20,7 +20,7 @@ POST:
         hash, 
         prefixed
 ```
-[`*adex-constants [SIGN_TYPES]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
+[`*adex-constants [SIGNATURE_MODE]`](https://github.com/AdExNetwork/adex-constants/blob/master/src/exchange.js)
 
 Returns user sessions in format 
 ```
