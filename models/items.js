@@ -116,8 +116,6 @@ class Items {
             if (demo) {
                 query.user = {
                     $in: [
-                        '0xB13Bf2A078Bf328B6C72D53129cdC61c940f4642'.toLowerCase(),
-                        '0x0f8302dFA3FAedc5736d2094691F054b9D7Cbf99'.toLowerCase(),
                         '0xaaa760e33c9c7397af1af1aaf4ca52d9ff7759be'.toLowerCase(),
                         '0xbeb34bf20c55f206c834836eb376381a20edda56'.toLowerCase(),
                     ]
