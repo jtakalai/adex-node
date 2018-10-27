@@ -109,10 +109,26 @@ class Items {
         })
     }
 
-    getUserItems(user, type) {
+    getUserItems(user, type, demo) {
         return new Promise((resolve, reject) => {
+            const query = { _type: parseInt(type), _deleted: false }
+            let limit = 0
+            if (demo) {
+                query.user = {
+                    $in: [
+                        '0xaaa760e33c9c7397af1af1aaf4ca52d9ff7759be'.toLowerCase(),
+                        '0xbeb34bf20c55f206c834836eb376381a20edda56'.toLowerCase(),
+                    ]
+                }
+                limit = 100
+            } else {
+                query.user = user
+            }
+
             this.getCollectionByItemType(constants.items.ItemTypeByTypeId[type])
-                .find({ user: user, _type: parseInt(type), _deleted: false })
+                // .find({ user: user, _type: parseInt(type), _deleted: false })
+                .find(query)
+                .limit(limit)
                 .toArray((err, result) => {
                     if (err) {
                         console.log('find items err', err)
