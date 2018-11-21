@@ -26,7 +26,7 @@ let cfg
 if (process.env.NODE_ENV === 'production') {
     cfg = mainnetCfg
 } else {
-    cfg = mainnetCfg
+    cfg = testrpcCfg
 }
 
 let provider = new Web3.providers.HttpProvider(cfg.node)
